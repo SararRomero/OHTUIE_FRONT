@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
-import 'sign_up_screen.dart';
-import 'forgot_password_screen.dart';
+import 'otp_verification_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class ForgotPasswordScreen extends StatefulWidget {
+  const ForgotPasswordScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  bool _obscureText = true;
-
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,18 +71,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Hola!',
+                        'Ingresa tu correo',
                         style: TextStyle(
-                          fontSize: 32,
+                          fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Nos alegra tenerte de nuevo, porfavor ingresa!.',
+                        'Porfavor ingresa tu correo para poder cambiar tu contraseña.',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           color: Colors.grey[600],
                         ),
                       ),
@@ -95,81 +91,28 @@ class _LoginScreenState extends State<LoginScreen> {
                       const Text('Email', style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       TextFormField(
-                        initialValue: '',
+                        initialValue: 'Lisa123@gmail.com', // Example from design
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.email_outlined),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 40),
 
-                      const Text('Contraseña', style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        obscureText: _obscureText,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-                            onPressed: () => setState(() => _obscureText = !_obscureText),
-                          ),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
-                        ),
-                      ),
-                      
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()));
-                          },
-                          child: const Text(
-                            'No te acuerdas de tu contraseña?',
-                            style: TextStyle(color: Color(0xFF6A9EFF)), // Light blue link color
-                          ),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 20),
-
-                      // Login Button
+                      // Send OTP Button
                       SizedBox(
                         width: double.infinity,
                         height: 55,
                         child: ElevatedButton(
                           onPressed: () {
-                            // Login implementation
+                             Navigator.push(context, MaterialPageRoute(builder: (_) => const OtpVerificationScreen()));
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFFCCE5),
+                            backgroundColor: const Color(0xFFFFCCE5), 
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                           ),
-                          child: const Text('Entra', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      Center(
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SignUpScreen()));
-                          },
-                          child: RichText(
-                            text: const TextSpan(
-                              text: 'No tienes cuenta? ',
-                              style: TextStyle(color: Colors.grey),
-                              children: [
-                                TextSpan(
-                                  text: 'Registrate',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          child: const Text('Send OTP Code', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
@@ -177,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-             const SizedBox(height: 40),
+            const SizedBox(height: 40),
           ],
         ),
       ),
