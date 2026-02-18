@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import '../auth/auth_service.dart';
+import '../auth/login_screen.dart';
 
 class CycleSetupScreen extends StatefulWidget {
-  const CycleSetupScreen({super.key});
+  final String name;
+  final String email;
+  final String password;
+
+  const CycleSetupScreen({
+    super.key,
+    required this.name,
+    required this.email,
+    required this.password,
+  });
 
   @override
   State<CycleSetupScreen> createState() => _CycleSetupScreenState();
@@ -16,6 +27,8 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
   int _cycleDuration = 28;
   int _periodDuration = 5;
   DateTime _lastPeriodDate = DateTime.now();
+  DateTime _birthday = DateTime(2000, 1, 1);
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -24,16 +37,51 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
   }
 
   void _nextPage() {
-    if (_currentPage < 2) {
+    if (_currentPage < 3) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
     } else {
-      // TODO: Finish setup, navigate to Home
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Setup Completed! Navigating to Home...')),
-      );
+      _handleFinalRegistration();
+    }
+  }
+
+  void _handleFinalRegistration() async {
+    setState(() => _isLoading = true);
+
+    final result = await AuthService.signUp(
+      email: widget.email,
+      password: widget.password,
+      fullName: widget.name,
+      birthday: _birthday,
+      cycleStartDate: _lastPeriodDate,
+      cycleDuration: _cycleDuration,
+      periodDuration: _periodDuration,
+    );
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (result['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registro exitoso! Por favor, inicia sesión.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${result['message']}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -56,6 +104,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
                   _buildCycleDurationPage(),
                   _buildPeriodDurationPage(),
                   _buildLastPeriodPage(),
+                  _buildBirthdayPage(),
                 ],
               ),
             ),
@@ -67,7 +116,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
                   // Page Indicator
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(3, (index) {
+                    children: List.generate(4, (index) {
                       return Container(
                         margin: const EdgeInsets.symmetric(horizontal: 4),
                         width: 8,
@@ -84,7 +133,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
                   const SizedBox(height: 20),
                   // Next Button
                   GestureDetector(
-                    onTap: _nextPage,
+                    onTap: _isLoading ? null : _nextPage,
                     child: Container(
                       width: 60,
                       height: 60,
@@ -93,13 +142,15 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
+                    color: Colors.black.withOpacity(0.1),
                             blurRadius: 10,
                             offset: const Offset(0, 5),
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.arrow_forward, color: Colors.white, size: 30),
+                      child: _isLoading 
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Icon(Icons.arrow_forward, color: Colors.white, size: 30),
                     ),
                   ),
                 ],
@@ -128,7 +179,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
         SizedBox(
           height: 200,
           child: Image.asset(
-            'assets/images/uterus.png',
+            'lib/assets/image/utero.png',
             errorBuilder: (context, error, stackTrace) =>
                 const Icon(Icons.favorite, size: 100, color: Color(0xFFFF80AB)),
           ),
@@ -145,8 +196,8 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
                 width: 200,
                 decoration: BoxDecoration(
                   border: Border(
-                    top: BorderSide(color: Colors.pink.withValues(alpha: 0.2)),
-                    bottom: BorderSide(color: Colors.pink.withValues(alpha: 0.2)),
+                    top: BorderSide(color: Colors.pink.withOpacity(0.2)),
+                    bottom: BorderSide(color: Colors.pink.withOpacity(0.2)),
                   )
                 ),
                ),
@@ -168,7 +219,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
                         style: TextStyle(
                           fontSize: isSelected ? 32 : 20,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? const Color(0xFFFF4081) : Colors.grey.withValues(alpha: 0.5),
+                          color: isSelected ? const Color(0xFFFF4081) : Colors.grey.withOpacity(0.5),
                         ),
                       ),
                     );
@@ -199,7 +250,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
         SizedBox(
           height: 200,
           child: Image.asset(
-            'assets/images/drop.png',
+            'lib/assets/image/gota.png',
             errorBuilder: (context, error, stackTrace) =>
                 const Icon(Icons.water_drop, size: 100, color: Colors.redAccent),
           ),
@@ -216,8 +267,8 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
                 width: 200,
                 decoration: BoxDecoration(
                   border: Border(
-                    top: BorderSide(color: Colors.pink.withValues(alpha: 0.2)),
-                    bottom: BorderSide(color: Colors.pink.withValues(alpha: 0.2)),
+                    top: BorderSide(color: Colors.pink.withOpacity(0.2)),
+                    bottom: BorderSide(color: Colors.pink.withOpacity(0.2)),
                   )
                 ),
                ),
@@ -238,7 +289,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
                         style: TextStyle(
                           fontSize: isSelected ? 32 : 20,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? const Color(0xFFFF4081) : Colors.grey.withValues(alpha: 0.5),
+                          color: isSelected ? const Color(0xFFFF4081) : Colors.grey.withOpacity(0.5),
                         ),
                       ),
                     );
@@ -269,7 +320,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
         SizedBox(
           height: 200,
           child: Image.asset(
-            'assets/images/pad.png',
+            'lib/assets/image/toalla.png',
             errorBuilder: (context, error, stackTrace) =>
                 const Icon(Icons.sanitizer, size: 100, color: Colors.pink),
           ),
@@ -305,7 +356,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
+                  color: Colors.black.withOpacity(0.05),
                   blurRadius: 10,
                 )
               ]
@@ -318,6 +369,69 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
         ),
         const SizedBox(height: 10),
         const Text("Tap to change", style: TextStyle(color: Colors.grey)),
+      ],
+    );
+  }
+
+  Widget _buildBirthdayPage() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.0),
+          child: Text(
+            '¿Cuando es tu cumpleaños?',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+          ),
+        ),
+        const SizedBox(height: 40),
+        // Placeholder for birthday illustration
+        const Icon(Icons.cake_outlined, size: 150, color: Color(0xFFFF80AB)),
+        const SizedBox(height: 40),
+        // Simple Date Picker Display (Interactive)
+        GestureDetector(
+          onTap: () async {
+            final DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: _birthday,
+              firstDate: DateTime(1900),
+              lastDate: DateTime.now(),
+              builder: (context, child) {
+                return Theme(
+                  data: ThemeData.light().copyWith(
+                    colorScheme: const ColorScheme.light(primary: Color(0xFFFF4081)),
+                  ),
+                  child: child!,
+                );
+              },
+            );
+            if (picked != null && picked != _birthday) {
+              setState(() {
+                _birthday = picked;
+              });
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                )
+              ]
+            ),
+            child: Text(
+              "${_birthday.day} / ${_birthday.month} / ${_birthday.year}",
+              style: const TextStyle(fontSize: 24, color: Color(0xFFFF4081), fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        const Text("Tap para cambiar", style: TextStyle(color: Colors.grey)),
       ],
     );
   }

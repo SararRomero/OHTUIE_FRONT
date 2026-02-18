@@ -71,31 +71,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   children: [
                     // Using the asset image as requested
                     Image.asset(
-                      'assets/images/logo.png',
-                      width: 150,
-                      height: 150,
+                      'lib/assets/image/logo.png',
+                      width: 250, // Increased size since it's now alone
+                      height: 250,
                       errorBuilder: (context, error, stackTrace) {
                         return const Icon(Icons.spa, size: 100, color: Color(0xFFFF4081));
                       },
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Ohtuie',
-                      style: TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFFF4081),
-                        fontFamily: 'Cursive', 
-                      ),
-                    ),
-                    const Text(
-                      'CYCLE & WELLNESS TRACKER',
-                      style: TextStyle(
-                        fontSize: 14,
-                        letterSpacing: 2.0,
-                        color: Color(0xFFFF4081),
-                        fontWeight: FontWeight.w500,
-                      ),
                     ),
                   ],
                 ),
@@ -114,7 +95,7 @@ class BackgroundPainter extends CustomPainter {
     final paint = Paint()..style = PaintingStyle.fill;
     // ... (Painting code same as before)
     // Top Left - Light Blue
-    paint.color = const Color(0xFFCCDDFF).withValues(alpha: 0.5);
+    paint.color = const Color(0xFFCCDDFF).withOpacity(0.5);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(-20, -20, size.width * 0.4, size.height * 0.25),

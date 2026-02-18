@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ohtuie_app2/features/auth/login_screen.dart';
 import '../cycle_setup/cycle_setup_screen.dart';
+import 'auth_service.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -10,8 +11,51 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscureText = true;
   bool _acceptedTerms = false;
+  bool _isLoading = false;
+
+  void _handleSignUp() {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, completa todos los campos')),
+      );
+      return;
+    }
+
+    if (!_acceptedTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Debes aceptar los términos y condiciones')),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context, 
+      MaterialPageRoute(
+        builder: (_) => CycleSetupScreen(
+          name: name,
+          email: email,
+          password: password,
+        )
+      )
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,8 +74,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         child: Column(
           children: [
             const SizedBox(height: 60),
-            // Leading Icon REMOVED as requested
-            const SizedBox(height: 48), // Spacer to replace the header area height
+            const SizedBox(height: 48), 
             
             Expanded(
               child: Container(
@@ -69,30 +112,35 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       const SizedBox(height: 30),
 
-                      // ... Fields (Same as before)
                       const Text('Nombre Completo', style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       TextFormField(
+                        controller: _nameController,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.person_outline),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
                         ),
+                        textCapitalization: TextCapitalization.words,
                       ),
                       const SizedBox(height: 20),
 
                       const Text('Email', style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       TextFormField(
+                        controller: _emailController,
                         decoration: InputDecoration(
+                          hintText: 'tu@email.com',
                           prefixIcon: const Icon(Icons.email_outlined),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
                         ),
+                        keyboardType: TextInputType.emailAddress,
                       ),
                       const SizedBox(height: 20),
 
                       const Text('Contraseña', style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       TextFormField(
+                        controller: _passwordController,
                         obscureText: _obscureText,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.lock_outline),
@@ -123,23 +171,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Enter Button - Navigates to Cycle Setup
+                      // Sign Up Button
                       SizedBox(
                         width: double.infinity,
                         height: 55,
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context, 
-                              MaterialPageRoute(builder: (_) => const CycleSetupScreen())
-                            );
-                          },
+                          onPressed: _isLoading ? null : _handleSignUp,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFFFCCE5), 
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                           ),
-                          child: const Text('Entrar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          child: _isLoading 
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text('Registrate', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -147,7 +192,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       Center(
                         child: GestureDetector(
                           onTap: () {
-                             Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                             Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
                           },
                           child: RichText(
                             text: const TextSpan(

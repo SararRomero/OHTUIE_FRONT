@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'otp_verification_screen.dart';
+import 'auth_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -9,6 +10,46 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  final _emailController = TextEditingController();
+  bool _isLoading = false;
+
+  void _handleRecoverPassword() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, ingresa tu email')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final result = await AuthService.recoverPassword(email);
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (result['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Código enviado! Revisa tu correo.'), backgroundColor: Colors.green),
+        );
+        Navigator.push(
+          context, 
+          MaterialPageRoute(builder: (_) => OtpVerificationScreen(email: email))
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${result['message']}'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,7 +67,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         child: Column(
           children: [
             const SizedBox(height: 60),
-            // Back Button
+            // ... (Back Button remains same)
             Padding(
               padding: const EdgeInsets.only(left: 20),
               child: Align(
@@ -37,7 +78,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
+                        color: Colors.black.withOpacity(0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -91,11 +132,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       const Text('Email', style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       TextFormField(
-                        initialValue: 'Lisa123@gmail.com', // Example from design
+                        controller: _emailController,
                         decoration: InputDecoration(
+                          hintText: 'tu@email.com',
                           prefixIcon: const Icon(Icons.email_outlined),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
                         ),
+                        keyboardType: TextInputType.emailAddress,
                       ),
                       const SizedBox(height: 40),
 
@@ -104,15 +147,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         width: double.infinity,
                         height: 55,
                         child: ElevatedButton(
-                          onPressed: () {
-                             Navigator.push(context, MaterialPageRoute(builder: (_) => const OtpVerificationScreen()));
-                          },
+                          onPressed: _isLoading ? null : _handleRecoverPassword,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFFFCCE5), 
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                           ),
-                          child: const Text('Send OTP Code', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          child: _isLoading 
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text('Send OTP Code', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],

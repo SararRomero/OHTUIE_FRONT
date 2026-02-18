@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'auth_service.dart';
+import 'reset_password_screen.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
-  const OtpVerificationScreen({super.key});
+  final String email;
+  const OtpVerificationScreen({super.key, required this.email});
 
   @override
   State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
@@ -11,6 +14,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   // Controllers for 6 digits
   final List<TextEditingController> _controllers = List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -32,6 +36,30 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     }
   }
 
+  void _handleVerifyCode() {
+    final code = _controllers.map((c) => c.text).join();
+
+    if (code.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, ingresa el código de 6 dígitos')),
+      );
+      return;
+    }
+
+    // Since we don't have a separate "Verify Code" endpoint that doesn't reset password yet,
+    // we simply navigate to ResetPasswordScreen with the code.
+    // If the backend had a separate verify endpoint, we'd call it here.
+    Navigator.push(
+      context, 
+      MaterialPageRoute(
+        builder: (_) => ResetPasswordScreen(
+          email: widget.email,
+          code: code,
+        )
+      )
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,7 +77,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         child: Column(
           children: [
             const SizedBox(height: 60),
-            // Back Button
+            // ... (Back Button remains same)
             Padding(
               padding: const EdgeInsets.only(left: 20),
               child: Align(
@@ -60,7 +88,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
+                        color: Colors.black.withOpacity(0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -103,7 +131,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Acabamos de mandar un codigo de recuperacion a tu Email, porfavor revisa e ingresalo!',
+                        'Acabamos de mandar un codigo de recuperacion a ${widget.email}, porfavor revisa e ingresalo!',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 14,
@@ -117,7 +145,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: List.generate(6, (index) {
                           return SizedBox(
-                            width: 40,
+                            width: 35, 
                             height: 50,
                             child: TextFormField(
                               controller: _controllers[index],
@@ -143,10 +171,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         }),
                       ),
                       
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 40),
                       TextButton(
-                        onPressed: () {
-                          // Resend code logic
+                        onPressed: _isLoading ? null : () {
+                          AuthService.recoverPassword(widget.email);
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Código reenviado')));
                         },
                         child: const Text('Resend Code', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
                       ),
@@ -158,15 +187,15 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         width: double.infinity,
                         height: 55,
                         child: ElevatedButton(
-                          onPressed: () {
-                             // Verify logic
-                          },
+                          onPressed: _isLoading ? null : _handleVerifyCode,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6A9EFF), // Blue button as in user image (approx)
+                            backgroundColor: const Color(0xFF6A9EFF), 
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                           ),
-                          child: const Text('Verify', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          child: _isLoading 
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text('Verify', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],

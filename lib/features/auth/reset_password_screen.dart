@@ -1,44 +1,61 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
-import 'sign_up_screen.dart';
-import 'forgot_password_screen.dart';
 import 'auth_service.dart';
+import 'login_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class ResetPasswordScreen extends StatefulWidget {
+  final String email;
+  final String code;
+
+  const ResetPasswordScreen({super.key, required this.email, required this.code});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _passwordController = TextEditingController();
-  bool _obscureText = true;
+  final _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   bool _isLoading = false;
 
-  void _handleLogin() async {
-    final email = _emailController.text.trim();
+  void _handleResetPassword() async {
     final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
+    if (password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, ingresa email y contraseña')),
+        const SnackBar(content: Text('Por favor, completa ambos campos')),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Las contraseñas no coinciden')),
       );
       return;
     }
 
     setState(() => _isLoading = true);
 
-    final result = await AuthService.login(email, password);
+    final result = await AuthService.resetPassword(
+      email: widget.email,
+      code: widget.code,
+      newPassword: password,
+    );
 
     if (mounted) {
       setState(() => _isLoading = false);
       if (result['success']) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login exitoso!'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('Contraseña cambiada con éxito!'), backgroundColor: Colors.green),
         );
-        // Navigator.pushReplacement(...) -> Navigate to Home/Dashboard
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: ${result['message']}'), backgroundColor: Colors.red),
@@ -49,8 +66,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -116,104 +133,70 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Hola!',
+                        'Cambia tu contraseña',
                         style: TextStyle(
-                          fontSize: 32,
+                          fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Nos alegra tenerte de nuevo, porfavor ingresa!.',
+                        'Porfavor ingresa una nueva contraeña que no olvides!',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           color: Colors.grey[600],
                         ),
                       ),
                       const SizedBox(height: 30),
 
-                      const Text('Email', style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _emailController,
-                        decoration: InputDecoration(
-                          hintText: 'tu@email.com',
-                          prefixIcon: const Icon(Icons.email_outlined),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-                      const SizedBox(height: 20),
-
-                      const Text('Contraseña', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text('Crea nueva contraseña', style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _passwordController,
-                        obscureText: _obscureText,
+                        obscureText: _obscurePassword,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
-                            icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-                            onPressed: () => setState(() => _obscureText = !_obscureText),
+                            icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          ),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      const Text('Confirma tu nueva contraseña', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        obscureText: _obscureConfirmPassword,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(_obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                            onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                           ),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
                         ),
                       ),
                       
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()));
-                          },
-                          child: const Text(
-                            'No te acuerdas de tu contraseña?',
-                            style: TextStyle(color: Color(0xFF6A9EFF)), // Light blue link color
-                          ),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 40),
 
-                      // Login Button
+                      // Save Button
                       SizedBox(
                         width: double.infinity,
                         height: 55,
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleLogin,
+                          onPressed: _isLoading ? null : _handleResetPassword,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFFCCE5),
+                            backgroundColor: const Color(0xFFFFCCE5), 
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                           ),
                           child: _isLoading 
                             ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Entra', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      Center(
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SignUpScreen()));
-                          },
-                          child: RichText(
-                            text: const TextSpan(
-                              text: 'No tienes cuenta? ',
-                              style: TextStyle(color: Colors.grey),
-                              children: [
-                                TextSpan(
-                                  text: 'Registrate',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                            : const Text('Save', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
@@ -221,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-             const SizedBox(height: 40),
+            const SizedBox(height: 40),
           ],
         ),
       ),
