@@ -72,8 +72,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     // Using the asset image as requested
                     Image.asset(
                       'lib/assets/image/logo.png',
-                      width: 250, // Increased size since it's now alone
-                      height: 250,
+                      width: 350,
+                      height: 350,
                       errorBuilder: (context, error, stackTrace) {
                         return const Icon(Icons.spa, size: 100, color: Color(0xFFFF4081));
                       },

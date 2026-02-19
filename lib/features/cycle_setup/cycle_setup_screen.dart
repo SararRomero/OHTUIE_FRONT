@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../auth/auth_service.dart';
@@ -19,9 +20,12 @@ class CycleSetupScreen extends StatefulWidget {
   State<CycleSetupScreen> createState() => _CycleSetupScreenState();
 }
 
-class _CycleSetupScreenState extends State<CycleSetupScreen> {
+class _CycleSetupScreenState extends State<CycleSetupScreen> with TickerProviderStateMixin {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  
+  // Animation Controller for Ripple Effect
+  late AnimationController _rippleController;
 
   // State variables for the inputs
   int _cycleDuration = 28;
@@ -30,10 +34,46 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
   DateTime _birthday = DateTime(2000, 1, 1);
   bool _isLoading = false;
 
+  // Colors for the button for each step
+  final List<Color> _buttonColors = [
+    const Color(0xFFBFD4FF), // Step 1
+    const Color(0xFFFFDCE0), // Step 2
+    const Color(0xFFEBD8F5), // Step 3
+    const Color(0xFFFFE4EF), // Step 4
+  ];
+  
+  // Official Ripple Colors
+  final List<Color> _rippleColors = [
+    const Color(0xFFBFD4FF),
+    const Color(0xFFFFDCE0),
+    const Color(0xFFEBD8F5),
+    const Color(0xFFFFE4EF),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _rippleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000), // Duration of one ripple expansion
+    );
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
+    _rippleController.dispose();
     super.dispose();
+  }
+
+  void _onNextTap() {
+    if (_isLoading) return;
+    
+    // Start animation
+    _rippleController.forward(from: 0.0).then((_) {
+      // After animation completes (or partly during), proceed to next page
+      _nextPage();
+    });
   }
 
   void _nextPage() {
@@ -65,7 +105,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
       if (result['success']) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Registro exitoso! Por favor, inicia sesión.'),
+            content: Text('¡Registro exitoso! Por favor, inicia sesión.'),
             backgroundColor: Colors.green,
           ),
         );
@@ -85,6 +125,13 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
     }
   }
 
+  Color _getCurrentButtonColor() {
+    if (_currentPage < _buttonColors.length) {
+      return _buttonColors[_currentPage];
+    }
+    return _buttonColors.last;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,6 +147,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
                     _currentPage = index;
                   });
                 },
+                physics: const NeverScrollableScrollPhysics(), // Disable swipe
                 children: [
                   _buildCycleDurationPage(),
                   _buildPeriodDurationPage(),
@@ -124,33 +172,56 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: _currentPage == index
-                              ? const Color(0xFFFF4081)
-                              : const Color(0xFFFFC1E3),
+                              ? _getCurrentButtonColor()
+                              : Colors.grey.withOpacity(0.3),
                         ),
                       );
                     }),
                   ),
-                  const SizedBox(height: 20),
-                  // Next Button
+                  const SizedBox(height: 30),
+                  // Next Button with Animation
                   GestureDetector(
-                    onTap: _isLoading ? null : _nextPage,
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFB7C5), // Soft Pink Button
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
+                    onTap: _onNextTap,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Ripple Animation Layer
+                        // We use an AnimatedBuilder to efficiently rebuild only the painting part
+                        AnimatedBuilder(
+                          animation: _rippleController,
+                          builder: (context, child) {
+                            return CustomPaint(
+                              size: const Size(200, 200), // Area for ripples to expand
+                              painter: _RipplePainter(
+                                animation: _rippleController,
+                                colors: _rippleColors,
+                              ),
+                            );
+                          },
+                        ),
+                        // The Button Itself
+                        Container(
+                          width: 70, 
+                          height: 70,
+                          decoration: BoxDecoration(
+                            color: _getCurrentButtonColor(),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: _getCurrentButtonColor().withOpacity(0.4),
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: _isLoading 
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Icon(Icons.arrow_forward, color: Colors.white, size: 30),
+                          child: _isLoading 
+                            ? const Padding(
+                                padding: EdgeInsets.all(20.0),
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                              )
+                            : const Icon(Icons.arrow_forward, color: Colors.white, size: 30),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -169,23 +240,22 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.0),
           child: Text(
-            'Ingrese la duración de su ciclo',
+            'Ingresa la duración de tu ciclo',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
           ),
         ),
-        const SizedBox(height: 40),
-        // Image Placeholder - Uterus
+        const SizedBox(height: 30),
         SizedBox(
-          height: 200,
+          height: 250,
           child: Image.asset(
             'lib/assets/image/utero.png',
+            fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) =>
                 const Icon(Icons.favorite, size: 100, color: Color(0xFFFF80AB)),
           ),
         ),
-        const SizedBox(height: 40),
-        // Number Picker Simulation (Simple ListWheelScrollView)
+        const SizedBox(height: 30),
         SizedBox(
           height: 150,
           child: Stack(
@@ -207,7 +277,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
                 diameterRatio: 1.2,
                 physics: const FixedExtentScrollPhysics(),
                 onSelectedItemChanged: (index) {
-                  setState(() => _cycleDuration = index + 20); // Starting from 20 for example
+                  setState(() => _cycleDuration = index + 20);
                 },
                 childDelegate: ListWheelChildBuilderDelegate(
                   builder: (context, index) {
@@ -240,23 +310,22 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.0),
           child: Text(
-            'Duración de su período',
+            'Duración de tu periodo',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
           ),
         ),
-        const SizedBox(height: 40),
-        // Image Placeholder - Drop
+        const SizedBox(height: 30),
         SizedBox(
-          height: 200,
+          height: 250,
           child: Image.asset(
             'lib/assets/image/gota.png',
+            fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) =>
                 const Icon(Icons.water_drop, size: 100, color: Colors.redAccent),
           ),
         ),
-        const SizedBox(height: 40),
-        // Number Picker
+        const SizedBox(height: 30),
          SizedBox(
           height: 150,
           child: Stack(
@@ -310,23 +379,22 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.0),
           child: Text(
-            'Cuando fue su ultimo periodo?',
+            '¿Cuándo fue tu último periodo?',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
           ),
         ),
-        const SizedBox(height: 40),
-        // Image Placeholder - Pad
+        const SizedBox(height: 30),
         SizedBox(
-          height: 200,
+          height: 250,
           child: Image.asset(
             'lib/assets/image/toalla.png',
+            fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) =>
                 const Icon(Icons.sanitizer, size: 100, color: Colors.pink),
           ),
         ),
-        const SizedBox(height: 40),
-        // Simple Date Picker Display (Interactive)
+        const SizedBox(height: 30),
         GestureDetector(
           onTap: () async {
             final DateTime? picked = await showDatePicker(
@@ -368,7 +436,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
           ),
         ),
         const SizedBox(height: 10),
-        const Text("Tap to change", style: TextStyle(color: Colors.grey)),
+        const Text("Toca para cambiar", style: TextStyle(color: Colors.grey)),
       ],
     );
   }
@@ -380,16 +448,17 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.0),
           child: Text(
-            '¿Cuando es tu cumpleaños?',
+            '¿Cuándo es tu cumpleaños?',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
           ),
         ),
-        const SizedBox(height: 40),
-        // Placeholder for birthday illustration
-        const Icon(Icons.cake_outlined, size: 150, color: Color(0xFFFF80AB)),
-        const SizedBox(height: 40),
-        // Simple Date Picker Display (Interactive)
+        const SizedBox(height: 30),
+        SizedBox(
+            height: 250,
+            child: const Icon(Icons.cake_outlined, size: 150, color: Color(0xFFFF80AB)),
+        ),
+        const SizedBox(height: 30),
         GestureDetector(
           onTap: () async {
             final DateTime? picked = await showDatePicker(
@@ -431,8 +500,67 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> {
           ),
         ),
         const SizedBox(height: 10),
-        const Text("Tap para cambiar", style: TextStyle(color: Colors.grey)),
+        const Text("Toca para cambiar", style: TextStyle(color: Colors.grey)),
       ],
     );
+  }
+}
+
+// Custom Painter for Ripple Effect
+class _RipplePainter extends CustomPainter {
+  final Animation<double> animation;
+  final List<Color> colors;
+
+  _RipplePainter({required this.animation, required this.colors}); // Removed 'repaint' super call to handle it in AnimatedBuilder
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (animation.value == 0.0) return;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    // Max radius is half the available space, but we want it to go outside the button
+    // The canvas size passed from CustomPaint is 200x200 (set in build method)
+    final maxRadius = size.width / 2;
+    // Button radius is roughly 35 (width 70)
+    
+    // Draw rings
+    // We want multiple rings expanding.
+    // Let's create 4 rings based on the colors provided.
+    
+    for (int i = 0; i < colors.length; i++) {
+        // We want the rings to follow each other.
+        // Let's spread them out over the animation value 0.0 -> 1.0.
+        // e.g., Ring 1 starts at 0.0. Ring 2 starts at 0.1?
+        
+        // Simple distinct ripples:
+        // Value: 0..1
+        // Ring offset: 
+        
+        // Let's make them appear in sequence.
+        // Each ring takes 0.7 of the total time, staggered by 0.1
+        
+        double start = i * 0.15;
+        double end = start + 0.7;
+        
+        // Normalize animation value to this ring's lifespan
+        double t = (animation.value - start) / 0.7;
+        
+        if (t >= 0.0 && t <= 1.0) {
+             final double radius = 35 + (maxRadius - 35) * t;
+             final double opacity = 1.0 - t;
+             
+             final paint = Paint()
+              ..color = colors[i].withOpacity(opacity)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 8 + (4 * (1.0 - t)); // Starts thick (12), ends thin (8)
+
+            canvas.drawCircle(center, radius, paint);
+        }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _RipplePainter oldDelegate) {
+    return true; // Always repaint when animation rebuilds
   }
 }
