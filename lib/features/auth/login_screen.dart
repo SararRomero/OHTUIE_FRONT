@@ -3,6 +3,7 @@ import '../../core/theme/app_colors.dart';
 import 'sign_up_screen.dart';
 import 'forgot_password_screen.dart';
 import 'auth_service.dart';
+import '../admin/admin_dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,10 +36,14 @@ class _LoginScreenState extends State<LoginScreen> {
     if (mounted) {
       setState(() => _isLoading = false);
       if (result['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login exitoso!'), backgroundColor: Colors.green),
-        );
-        // Navigator.pushReplacement(...) -> Navigate to Home/Dashboard
+        if (result['role'] == 'admin') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+          );
+        } else {
+          // Navigator.pushReplacement(...) -> Navigate to User Home/Dashboard
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: ${result['message']}'), backgroundColor: Colors.red),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ohtuie_app2/features/auth/login_screen.dart';
 import '../cycle_setup/cycle_setup_screen.dart';
+import 'terms_screen.dart';
 import 'auth_service.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -162,9 +163,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                           ),
                           Expanded(
-                            child: Text(
-                              'Aceptas terminos y Condiciones?',
-                              style: TextStyle(color: Colors.grey[600]),
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const TermsScreen()),
+                                );
+                              },
+                              child: Text(
+                                'Aceptas terminos y Condiciones?',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
                             ),
                           ),
                         ],
