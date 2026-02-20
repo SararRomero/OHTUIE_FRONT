@@ -55,7 +55,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> with TickerProvider
     super.initState();
     _rippleController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000), // Duration of one ripple expansion
+      duration: const Duration(milliseconds: 1500), // Slower animation for broader ripples
     );
   }
 
@@ -137,94 +137,116 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> with TickerProvider
     return Scaffold(
       backgroundColor: const Color(0xFFFFF0F5), // Light Pink Background
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index;
-                  });
-                },
-                physics: const NeverScrollableScrollPhysics(), // Disable swipe
-                children: [
-                  _buildCycleDurationPage(),
-                  _buildPeriodDurationPage(),
-                  _buildLastPeriodPage(),
-                  _buildBirthdayPage(),
-                ],
-              ),
+            Column(
+              children: [
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentPage = index;
+                      });
+                    },
+                    physics: const NeverScrollableScrollPhysics(), // Disable swipe
+                    children: [
+                      _buildCycleDurationPage(),
+                      _buildPeriodDurationPage(),
+                      _buildLastPeriodPage(),
+                      _buildBirthdayPage(),
+                    ],
+                  ),
+                ),
+                // Bottom Navigation Area
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 40.0),
+                  child: Column(
+                    children: [
+                      // Page Indicator
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(4, (index) {
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _currentPage == index
+                                  ? _getCurrentButtonColor()
+                                  : Colors.grey.withOpacity(0.3),
+                            ),
+                          );
+                        }),
+                      ),
+                      const SizedBox(height: 30),
+                      // Next Button with Animation
+                      GestureDetector(
+                        onTap: _onNextTap,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Ripple Animation Layer
+                            // We use an AnimatedBuilder to efficiently rebuild only the painting part
+                            AnimatedBuilder(
+                              animation: _rippleController,
+                              builder: (context, child) {
+                                return CustomPaint(
+                                  size: const Size(200, 200), // Area for ripples to expand
+                                  painter: _RipplePainter(
+                                    animation: _rippleController,
+                                    color: _getCurrentButtonColor(),
+                                  ),
+                                );
+                              },
+                            ),
+                            // The Button Itself
+                            Container(
+                              width: 70, 
+                              height: 70,
+                              decoration: BoxDecoration(
+                                color: _getCurrentButtonColor(),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _getCurrentButtonColor().withOpacity(0.4),
+                                    blurRadius: 15,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: _isLoading 
+                                ? const Padding(
+                                    padding: EdgeInsets.all(20.0),
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                                  )
+                                : const Icon(Icons.arrow_forward, color: Colors.white, size: 30),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            // Bottom Navigation Area
-            Padding(
-              padding: const EdgeInsets.only(bottom: 40.0),
-              child: Column(
-                children: [
-                  // Page Indicator
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(4, (index) {
-                      return Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _currentPage == index
-                              ? _getCurrentButtonColor()
-                              : Colors.grey.withOpacity(0.3),
-                        ),
+             // Back Button
+            Positioned(
+              top: 10,
+              left: 10,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios, color: Colors.black54),
+                onPressed: () {
+                  if (_currentPage > 0) {
+                     _pageController.previousPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
                       );
-                    }),
-                  ),
-                  const SizedBox(height: 30),
-                  // Next Button with Animation
-                  GestureDetector(
-                    onTap: _onNextTap,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Ripple Animation Layer
-                        // We use an AnimatedBuilder to efficiently rebuild only the painting part
-                        AnimatedBuilder(
-                          animation: _rippleController,
-                          builder: (context, child) {
-                            return CustomPaint(
-                              size: const Size(200, 200), // Area for ripples to expand
-                              painter: _RipplePainter(
-                                animation: _rippleController,
-                                colors: _rippleColors,
-                              ),
-                            );
-                          },
-                        ),
-                        // The Button Itself
-                        Container(
-                          width: 70, 
-                          height: 70,
-                          decoration: BoxDecoration(
-                            color: _getCurrentButtonColor(),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: _getCurrentButtonColor().withOpacity(0.4),
-                                blurRadius: 15,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: _isLoading 
-                            ? const Padding(
-                                padding: EdgeInsets.all(20.0),
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
-                              )
-                            : const Icon(Icons.arrow_forward, color: Colors.white, size: 30),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  } else {
+                    Navigator.of(context).pop();
+                  }
+                },
               ),
             ),
           ],
@@ -234,274 +256,290 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> with TickerProvider
   }
 
   Widget _buildCycleDurationPage() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.0),
-          child: Text(
-            'Ingresa la duración de tu ciclo',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.0),
+            child: Text(
+              'Ingresa la duración de tu ciclo',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+            ),
           ),
-        ),
-        const SizedBox(height: 30),
-        SizedBox(
-          height: 250,
-          child: Image.asset(
-            'lib/assets/image/utero.png',
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) =>
-                const Icon(Icons.favorite, size: 100, color: Color(0xFFFF80AB)),
-          ),
-        ),
-        const SizedBox(height: 30),
-        SizedBox(
-          height: 150,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-               Container(
-                height: 50,
-                width: 200,
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: Colors.pink.withOpacity(0.2)),
-                    bottom: BorderSide(color: Colors.pink.withOpacity(0.2)),
-                  )
-                ),
-               ),
-              ListWheelScrollView.useDelegate(
-                itemExtent: 50,
-                perspective: 0.005,
-                diameterRatio: 1.2,
-                physics: const FixedExtentScrollPhysics(),
-                onSelectedItemChanged: (index) {
-                  setState(() => _cycleDuration = index + 20);
-                },
-                childDelegate: ListWheelChildBuilderDelegate(
-                  builder: (context, index) {
-                    final value = index + 20;
-                    final isSelected = value == _cycleDuration;
-                    return Center(
-                      child: Text(
-                        '$value',
-                        style: TextStyle(
-                          fontSize: isSelected ? 32 : 20,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? const Color(0xFFFF4081) : Colors.grey.withOpacity(0.5),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+          const SizedBox(height: 30),
+          SizedBox(
+            height: 250,
+            child: Center(
+              child: Image.asset(
+                'lib/assets/image/utero.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.favorite, size: 100, color: Color(0xFFFF80AB)),
               ),
-            ],
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 30),
+          SizedBox(
+            height: 150,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                 Container(
+                  height: 50,
+                  width: 200,
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: Colors.pink.withOpacity(0.2)),
+                      bottom: BorderSide(color: Colors.pink.withOpacity(0.2)),
+                    )
+                  ),
+                 ),
+                ListWheelScrollView.useDelegate(
+                  itemExtent: 50,
+                  perspective: 0.005,
+                  diameterRatio: 1.2,
+                  physics: const FixedExtentScrollPhysics(),
+                  onSelectedItemChanged: (index) {
+                    setState(() => _cycleDuration = index + 20);
+                  },
+                  childDelegate: ListWheelChildBuilderDelegate(
+                    builder: (context, index) {
+                      final value = index + 20;
+                      final isSelected = value == _cycleDuration;
+                      return Center(
+                        child: Text(
+                          '$value',
+                          style: TextStyle(
+                            fontSize: isSelected ? 32 : 20,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            color: isSelected ? const Color(0xFFFF4081) : Colors.grey.withOpacity(0.5),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildPeriodDurationPage() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.0),
-          child: Text(
-            'Duración de tu periodo',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.0),
+            child: Text(
+              'Duración de tu periodo',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+            ),
           ),
-        ),
-        const SizedBox(height: 30),
-        SizedBox(
-          height: 250,
-          child: Image.asset(
-            'lib/assets/image/gota.png',
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) =>
-                const Icon(Icons.water_drop, size: 100, color: Colors.redAccent),
-          ),
-        ),
-        const SizedBox(height: 30),
-         SizedBox(
-          height: 150,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-               Container(
-                height: 50,
-                width: 200,
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: Colors.pink.withOpacity(0.2)),
-                    bottom: BorderSide(color: Colors.pink.withOpacity(0.2)),
-                  )
-                ),
-               ),
-              ListWheelScrollView.useDelegate(
-                itemExtent: 50,
-                perspective: 0.005,
-                physics: const FixedExtentScrollPhysics(),
-                onSelectedItemChanged: (index) {
-                  setState(() => _periodDuration = index + 1);
-                },
-                childDelegate: ListWheelChildBuilderDelegate(
-                  builder: (context, index) {
-                    final value = index + 1;
-                    final isSelected = value == _periodDuration;
-                    return Center(
-                      child: Text(
-                        '$value',
-                        style: TextStyle(
-                          fontSize: isSelected ? 32 : 20,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? const Color(0xFFFF4081) : Colors.grey.withOpacity(0.5),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+          const SizedBox(height: 30),
+          SizedBox(
+            height: 250,
+            child: Center(
+              child: Image.asset(
+                'lib/assets/image/gota.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.water_drop, size: 100, color: Colors.redAccent),
               ),
-            ],
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 30),
+           SizedBox(
+            height: 150,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                 Container(
+                  height: 50,
+                  width: 200,
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: Colors.pink.withOpacity(0.2)),
+                      bottom: BorderSide(color: Colors.pink.withOpacity(0.2)),
+                    )
+                  ),
+                 ),
+                ListWheelScrollView.useDelegate(
+                  itemExtent: 50,
+                  perspective: 0.005,
+                  physics: const FixedExtentScrollPhysics(),
+                  onSelectedItemChanged: (index) {
+                    setState(() => _periodDuration = index + 1);
+                  },
+                  childDelegate: ListWheelChildBuilderDelegate(
+                    builder: (context, index) {
+                      final value = index + 1;
+                      final isSelected = value == _periodDuration;
+                      return Center(
+                        child: Text(
+                          '$value',
+                          style: TextStyle(
+                            fontSize: isSelected ? 32 : 20,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            color: isSelected ? const Color(0xFFFF4081) : Colors.grey.withOpacity(0.5),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildLastPeriodPage() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.0),
-          child: Text(
-            '¿Cuándo fue tu último periodo?',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
-          ),
-        ),
-        const SizedBox(height: 30),
-        SizedBox(
-          height: 250,
-          child: Image.asset(
-            'lib/assets/image/toalla.png',
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) =>
-                const Icon(Icons.sanitizer, size: 100, color: Colors.pink),
-          ),
-        ),
-        const SizedBox(height: 30),
-        GestureDetector(
-          onTap: () async {
-            final DateTime? picked = await showDatePicker(
-              context: context,
-              initialDate: _lastPeriodDate,
-              firstDate: DateTime(2020),
-              lastDate: DateTime.now(),
-              builder: (context, child) {
-                return Theme(
-                  data: ThemeData.light().copyWith(
-                    colorScheme: const ColorScheme.light(primary: Color(0xFFFF4081)),
-                  ),
-                  child: child!,
-                );
-              },
-            );
-            if (picked != null && picked != _lastPeriodDate) {
-              setState(() {
-                _lastPeriodDate = picked;
-              });
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                )
-              ]
-            ),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.0),
             child: Text(
-              "${_lastPeriodDate.day} / ${_lastPeriodDate.month} / ${_lastPeriodDate.year}",
-              style: const TextStyle(fontSize: 24, color: Color(0xFFFF4081), fontWeight: FontWeight.bold),
+              '¿Cuándo fue tu último periodo?',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
             ),
           ),
-        ),
-        const SizedBox(height: 10),
-        const Text("Toca para cambiar", style: TextStyle(color: Colors.grey)),
-      ],
+          const SizedBox(height: 30),
+          SizedBox(
+            height: 250,
+            child: Center(
+              child: Image.asset(
+                'lib/assets/image/toalla.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.sanitizer, size: 100, color: Colors.pink),
+              ),
+            ),
+          ),
+          const SizedBox(height: 30),
+          GestureDetector(
+            onTap: () async {
+              final DateTime? picked = await showDatePicker(
+                context: context,
+                initialDate: _lastPeriodDate,
+                firstDate: DateTime(2020),
+                lastDate: DateTime.now(),
+                builder: (context, child) {
+                  return Theme(
+                    data: ThemeData.light().copyWith(
+                      colorScheme: const ColorScheme.light(primary: Color(0xFFFF4081)),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+              if (picked != null && picked != _lastPeriodDate) {
+                setState(() {
+                  _lastPeriodDate = picked;
+                });
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                  )
+                ]
+              ),
+              child: Text(
+                "${_lastPeriodDate.day} / ${_lastPeriodDate.month} / ${_lastPeriodDate.year}",
+                style: const TextStyle(fontSize: 24, color: Color(0xFFFF4081), fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text("Toca para cambiar", style: TextStyle(color: Colors.grey)),
+        ],
+      ),
     );
   }
 
   Widget _buildBirthdayPage() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.0),
-          child: Text(
-            '¿Cuándo es tu cumpleaños?',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
-          ),
-        ),
-        const SizedBox(height: 30),
-        SizedBox(
-            height: 250,
-            child: const Icon(Icons.cake_outlined, size: 150, color: Color(0xFFFF80AB)),
-        ),
-        const SizedBox(height: 30),
-        GestureDetector(
-          onTap: () async {
-            final DateTime? picked = await showDatePicker(
-              context: context,
-              initialDate: _birthday,
-              firstDate: DateTime(1900),
-              lastDate: DateTime.now(),
-              builder: (context, child) {
-                return Theme(
-                  data: ThemeData.light().copyWith(
-                    colorScheme: const ColorScheme.light(primary: Color(0xFFFF4081)),
-                  ),
-                  child: child!,
-                );
-              },
-            );
-            if (picked != null && picked != _birthday) {
-              setState(() {
-                _birthday = picked;
-              });
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                )
-              ]
-            ),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.0),
             child: Text(
-              "${_birthday.day} / ${_birthday.month} / ${_birthday.year}",
-              style: const TextStyle(fontSize: 24, color: Color(0xFFFF4081), fontWeight: FontWeight.bold),
+              '¿Cuándo es tu cumpleaños?',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
             ),
           ),
-        ),
-        const SizedBox(height: 10),
-        const Text("Toca para cambiar", style: TextStyle(color: Colors.grey)),
-      ],
+          const SizedBox(height: 30),
+          const SizedBox(
+              height: 250,
+              child: Center(
+                child: Icon(Icons.cake_outlined, size: 150, color: Color(0xFFFF80AB)),
+              ),
+          ),
+          const SizedBox(height: 30),
+          GestureDetector(
+            onTap: () async {
+              final DateTime? picked = await showDatePicker(
+                context: context,
+                initialDate: _birthday,
+                firstDate: DateTime(1900),
+                lastDate: DateTime.now(),
+                builder: (context, child) {
+                  return Theme(
+                    data: ThemeData.light().copyWith(
+                      colorScheme: const ColorScheme.light(primary: Color(0xFFFF4081)),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+              if (picked != null && picked != _birthday) {
+                setState(() {
+                  _birthday = picked;
+                });
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                  )
+                ]
+              ),
+              child: Text(
+                "${_birthday.day} / ${_birthday.month} / ${_birthday.year}",
+                style: const TextStyle(fontSize: 24, color: Color(0xFFFF4081), fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text("Toca para cambiar", style: TextStyle(color: Colors.grey)),
+        ],
+      ),
     );
   }
 }
@@ -509,50 +547,39 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> with TickerProvider
 // Custom Painter for Ripple Effect
 class _RipplePainter extends CustomPainter {
   final Animation<double> animation;
-  final List<Color> colors;
+  final Color color;
 
-  _RipplePainter({required this.animation, required this.colors}); // Removed 'repaint' super call to handle it in AnimatedBuilder
+  _RipplePainter({required this.animation, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
     if (animation.value == 0.0) return;
 
     final center = Offset(size.width / 2, size.height / 2);
-    // Max radius is half the available space, but we want it to go outside the button
-    // The canvas size passed from CustomPaint is 200x200 (set in build method)
     final maxRadius = size.width / 2;
-    // Button radius is roughly 35 (width 70)
+    // We want exactly 4 circles
+    final int rippleCount = 4;
     
-    // Draw rings
-    // We want multiple rings expanding.
-    // Let's create 4 rings based on the colors provided.
-    
-    for (int i = 0; i < colors.length; i++) {
-        // We want the rings to follow each other.
-        // Let's spread them out over the animation value 0.0 -> 1.0.
-        // e.g., Ring 1 starts at 0.0. Ring 2 starts at 0.1?
+    for (int i = 0; i < rippleCount; i++) {
+        // Stagger the ripples
+        // Total duration is 1.0 (normalized)
+        // We want them to appear sequentially but overlap significantly
         
-        // Simple distinct ripples:
-        // Value: 0..1
-        // Ring offset: 
+        double stagger = 0.15; 
+        double start = i * stagger;
+        double end = start + 0.6; // Each ripple lasts 0.6 of the cycle
         
-        // Let's make them appear in sequence.
-        // Each ring takes 0.7 of the total time, staggered by 0.1
-        
-        double start = i * 0.15;
-        double end = start + 0.7;
-        
-        // Normalize animation value to this ring's lifespan
-        double t = (animation.value - start) / 0.7;
+        // Calculate t for this specific ripple
+        double t = (animation.value - start) / 0.6;
         
         if (t >= 0.0 && t <= 1.0) {
              final double radius = 35 + (maxRadius - 35) * t;
-             final double opacity = 1.0 - t;
+             final double opacity = (1.0 - t).clamp(0.0, 1.0);
              
              final paint = Paint()
-              ..color = colors[i].withOpacity(opacity)
+              ..color = color.withOpacity(opacity * 0.6) // Reduced base opacity
               ..style = PaintingStyle.stroke
-              ..strokeWidth = 8 + (4 * (1.0 - t)); // Starts thick (12), ends thin (8)
+              ..strokeWidth = 4 + (4 * (1.0 - t)); 
 
             canvas.drawCircle(center, radius, paint);
         }
@@ -561,6 +588,6 @@ class _RipplePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _RipplePainter oldDelegate) {
-    return true; // Always repaint when animation rebuilds
+    return true; 
   }
 }
