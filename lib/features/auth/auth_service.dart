@@ -13,19 +13,12 @@ class AuthService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final token = data['access_token'];
+        final role = data['role'] ?? "user";
         
-        // Save token
+        // Save token and role
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
-        
-        // Fetch user profile to get role
-        final profileResponse = await ApiClient.get("/users/me", token: token);
-        String role = "user";
-        if (profileResponse.statusCode == 200) {
-          final profileData = jsonDecode(profileResponse.body);
-          role = profileData['role'] ?? "user";
-          await prefs.setString('user_role', role);
-        }
+        await prefs.setString('user_role', role);
         
         return {"success": true, "token": token, "role": role};
       } else {

@@ -39,4 +39,28 @@ class ApiClient {
     print("Sending GET to $url");
     return await http.get(url, headers: headers).timeout(const Duration(seconds: 10));
   }
+
+  static Future<http.Response> putDirect(String endpoint, Map<String, dynamic> body, {String? token}) async {
+    final url = Uri.parse("$baseUrl$apiV1$endpoint");
+    final headers = {"Content-Type": "application/json"};
+    if (token != null) {
+      headers["Authorization"] = "Bearer $token";
+    }
+    print("Sending PUT to $url with body: $body");
+    return await http.put(
+      url,
+      headers: headers,
+      body: jsonEncode(body),
+    ).timeout(const Duration(seconds: 10));
+  }
+
+  static Future<http.Response> deleteDirect(String endpoint, {String? token}) async {
+    final url = Uri.parse("$baseUrl$apiV1$endpoint");
+    final headers = {"Content-Type": "application/json"};
+    if (token != null) {
+      headers["Authorization"] = "Bearer $token";
+    }
+    print("Sending DELETE to $url");
+    return await http.delete(url, headers: headers).timeout(const Duration(seconds: 10));
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'admin_service.dart';
+import 'users_list_screen.dart';
 import 'dart:math' as math;
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -13,7 +14,9 @@ class AdminDashboardScreen extends StatefulWidget {
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
+  bool _isLoadingUsers = false;
   Map<String, dynamic>? _stats;
+  List<dynamic> _users = [];
   String? _error;
 
   @override
@@ -21,6 +24,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadStats();
+    _loadUsers();
+  }
+
+  Future<void> _loadUsers() async {
+    setState(() => _isLoadingUsers = true);
+    final result = await AdminService.getUsers();
+    if (mounted) {
+      if (result['success']) {
+        setState(() {
+          _users = result['data'];
+          _isLoadingUsers = false;
+        });
+      } else {
+        setState(() => _isLoadingUsers = false);
+      }
+    }
   }
 
   Future<void> _loadStats() async {
@@ -152,6 +171,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
+          _buildUserList(),
+          const SizedBox(height: 24),
           _buildChartCard(
             title: 'Métricas del sistema',
             chart: _buildBarChart(),
@@ -179,6 +200,73 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     );
   }
 
+  Widget _buildUserList() {
+    // Only show top 3 users
+    final displayUsers = _users.take(3).toList();
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Gestión de Usuarios', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              if (_isLoadingUsers)
+                const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+              else
+                IconButton(icon: const Icon(Icons.refresh, size: 20), onPressed: _loadUsers),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (_users.isEmpty && !_isLoadingUsers)
+            const Center(child: Text('No hay usuarios registrados'))
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: displayUsers.length,
+              separatorBuilder: (context, index) => const Divider(),
+              itemBuilder: (context, index) {
+                final user = displayUsers[index];
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(user['full_name'] ?? 'Sin nombre', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(user['email'] ?? ''),
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.pink[50], // Aesthetic touch
+                    child: Text(
+                      (user['full_name'] ?? 'U')[0].toUpperCase(),
+                      style: const TextStyle(color: Color(0xFFFF4081)),
+                    ),
+                  ),
+                );
+              },
+            ),
+          const SizedBox(height: 10),
+          Center(
+            child: TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const UsersListScreen()),
+                ).then((_) => _loadUsers()); // Reload on return
+              },
+              child: const Text('Ver todos los usuarios', style: TextStyle(color: Color(0xFFFF4081))),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // _showEditUserDialog and _deleteUser removed from here as they are now in UsersListScreen
+
   Widget _buildChartCard({required String title, required Widget chart, required IconData actionIcon, required Color actionColor}) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -192,7 +280,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Expanded( // Fix overflow
+                child: Text(
+                  title, 
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(color: actionColor.withOpacity(0.1), shape: BoxShape.circle),
