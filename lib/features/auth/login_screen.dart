@@ -4,6 +4,7 @@ import 'sign_up_screen.dart';
 import 'forgot_password_screen.dart';
 import 'auth_service.dart';
 import '../admin/admin_dashboard_screen.dart';
+import '../home/user_home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -42,7 +43,10 @@ class _LoginScreenState extends State<LoginScreen> {
             MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
           );
         } else {
-          // Navigator.pushReplacement(...) -> Navigate to User Home/Dashboard
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const UserHomeScreen()),
+          );
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

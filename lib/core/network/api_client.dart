@@ -5,11 +5,14 @@ class ApiClient {
   static const String baseUrl = "http://192.168.50.20:8000";
   static const String apiV1 = "/api/v1";
 
-  static Future<http.Response> post(String endpoint, Map<String, dynamic> body, {Map<String, String>? headers}) async {
+  static Future<http.Response> post(String endpoint, Map<String, dynamic> body, {Map<String, String>? headers, String? token}) async {
     final url = Uri.parse("$baseUrl$apiV1$endpoint");
     final defaultHeaders = {"Content-Type": "application/json"};
     if (headers != null) {
       defaultHeaders.addAll(headers);
+    }
+    if (token != null) {
+      defaultHeaders["Authorization"] = "Bearer $token";
     }
 
     print("Sending POST to $url with body: $body");

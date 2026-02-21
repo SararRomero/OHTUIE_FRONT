@@ -63,7 +63,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                         borderRadius: BorderRadius.circular(15),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
+                            color: Colors.grey.withAlpha((0.1 * 255).toInt()),
                             spreadRadius: 1,
                             blurRadius: 5,
                           ),
@@ -149,18 +149,18 @@ class _UsersListScreenState extends State<UsersListScreen> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
               final result = await AdminService.updateUser(user['id'], {
                 'full_name': nameController.text,
                 'email': emailController.text,
               });
-              if (mounted) {
-                Navigator.pop(context);
-                if (result['success']) {
-                  _loadUsers();
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Usuario actualizado')));
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message']), backgroundColor: Colors.red));
-                }
+              if (!mounted) return;
+              Navigator.pop(context);
+              if (result['success']) {
+                _loadUsers();
+                messenger.showSnackBar(const SnackBar(content: Text('Usuario actualizado')));
+              } else {
+                messenger.showSnackBar(SnackBar(content: Text(result['message']), backgroundColor: Colors.red));
               }
             },
             child: const Text('Guardar'),
@@ -199,11 +199,12 @@ class _UsersListScreenState extends State<UsersListScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: isActive ? Colors.orange : Colors.green),
             onPressed: () async {
+               final messenger = ScaffoldMessenger.of(context);
                // 1. Verify Password
                final verify = await AdminService.verifyAdminPassword(passwordController.text);
                if (!verify['success']) {
                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       SnackBar(content: Text(verify['message']), backgroundColor: Colors.red)
                     );
                  }
@@ -215,14 +216,13 @@ class _UsersListScreenState extends State<UsersListScreen> {
                 'is_active': !isActive,
               });
               
-              if (mounted) {
-                Navigator.pop(context);
-                if (result['success']) {
-                  _loadUsers();
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Usuario ${isActive ? "bloqueado" : "desbloqueado"} correctamente')));
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message']), backgroundColor: Colors.red));
-                }
+              if (!mounted) return;
+              Navigator.pop(context);
+              if (result['success']) {
+                _loadUsers();
+                messenger.showSnackBar(SnackBar(content: Text('Usuario ${isActive ? "bloqueado" : "desbloqueado"} correctamente')));
+              } else {
+                messenger.showSnackBar(SnackBar(content: Text(result['message']), backgroundColor: Colors.red));
               }
             },
             child: Text(action, style: const TextStyle(color: Colors.white)),
@@ -258,11 +258,12 @@ class _UsersListScreenState extends State<UsersListScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
+               final messenger = ScaffoldMessenger.of(context);
                // 1. Verify Password
                final verify = await AdminService.verifyAdminPassword(passwordController.text);
                if (!verify['success']) {
                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       SnackBar(content: Text(verify['message']), backgroundColor: Colors.red)
                     );
                  }
@@ -271,14 +272,13 @@ class _UsersListScreenState extends State<UsersListScreen> {
 
               // 2. Perform Action
               final result = await AdminService.deleteUser(userId);
-              if (mounted) {
-                Navigator.pop(context);
-                if (result['success']) {
-                  _loadUsers();
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Usuario eliminado')));
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message']), backgroundColor: Colors.red));
-                }
+              if (!mounted) return;
+              Navigator.pop(context);
+              if (result['success']) {
+                _loadUsers();
+                messenger.showSnackBar(const SnackBar(content: Text('Usuario eliminado')));
+              } else {
+                messenger.showSnackBar(SnackBar(content: Text(result['message']), backgroundColor: Colors.red));
               }
             },
             child: const Text('Eliminar', style: TextStyle(color: Colors.white)),

@@ -3,6 +3,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/network/api_client.dart';
 
 class AuthService {
+  static SharedPreferences? _prefs;
+
+  static Future<SharedPreferences> _getPrefs() async {
+    _prefs ??= await SharedPreferences.getInstance();
+    return _prefs!;
+  }
   static Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await ApiClient.postForm("/login/access-token", {
@@ -15,8 +21,7 @@ class AuthService {
         final token = data['access_token'];
         final role = data['role'] ?? "user";
         
-        // Save token and role
-        final prefs = await SharedPreferences.getInstance();
+        final prefs = await _getPrefs();
         await prefs.setString('auth_token', token);
         await prefs.setString('user_role', role);
         
@@ -100,12 +105,12 @@ class AuthService {
   }
 
   static Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.remove('auth_token');
   }
 
   static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     return prefs.getString('auth_token');
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'admin_service.dart';
 import 'users_list_screen.dart';
+import 'admin_settings_screen.dart';
 import 'dart:math' as math;
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -18,6 +19,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   Map<String, dynamic>? _stats;
   List<dynamic> _users = [];
   String? _error;
+  String? _usersError;
+  bool _serverDown = false;
 
   @override
   void initState() {
@@ -28,7 +31,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   }
 
   Future<void> _loadUsers() async {
-    setState(() => _isLoadingUsers = true);
+    setState(() {
+      _isLoadingUsers = true;
+      _usersError = null;
+    });
     final result = await AdminService.getUsers();
     if (mounted) {
       if (result['success']) {
@@ -37,7 +43,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
           _isLoadingUsers = false;
         });
       } else {
-        setState(() => _isLoadingUsers = false);
+        setState(() {
+          _usersError = result['message'];
+          _isLoadingUsers = false;
+        });
       }
     }
   }
@@ -46,6 +55,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     setState(() {
       _isLoading = true;
       _error = null;
+      _serverDown = false;
     });
 
     final result = await AdminService.getStatistics();
@@ -54,13 +64,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       if (result['success']) {
         setState(() {
           _stats = result['data'];
+          _serverDown = false;
           _isLoading = false;
         });
       } else {
+        // No bloquear el dashboard: mostrar con datos vacíos y banner de aviso
         setState(() {
-          _error = result['message'];
+          _stats = {};
+          _serverDown = true;
           _isLoading = false;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No se pudo conectar al servidor: ${result["message"]}'),
+            backgroundColor: Colors.orange[700],
+            duration: const Duration(seconds: 4),
+          ),
+        );
       }
     }
   }
@@ -79,24 +99,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       );
     }
 
-    if (_error != null) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('Error: $_error', style: const TextStyle(color: Colors.red)),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _loadStats,
-                child: const Text('Reintentar'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: const Color(0xFFFDF0F3), // Light pink background
       appBar: AppBar(
@@ -109,7 +111,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
         actions: [
           IconButton(
             icon: const Icon(Icons.menu, color: Colors.black),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AdminSettingsScreen()),
+              );
+            },
           ),
         ],
         bottom: TabBar(
@@ -123,11 +130,41 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          _buildSecurityView(),
-          _buildUsersView(),
+          // Banner de servidor caído
+          if (_serverDown)
+            Material(
+              color: Colors.orange[700],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.cloud_off, color: Colors.white, size: 18),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Servidor no disponible — mostrando datos en cero',
+                        style: TextStyle(color: Colors.white, fontSize: 13),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () { _loadStats(); _loadUsers(); },
+                      child: const Text('Reintentar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildSecurityView(),
+                _buildUsersView(),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -224,7 +261,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
             ],
           ),
           const SizedBox(height: 16),
-          if (_users.isEmpty && !_isLoadingUsers)
+          if (_usersError != null && !_isLoadingUsers)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                    const SizedBox(height: 4),
+                    Text('No se pudieron cargar usuarios', style: TextStyle(color: Colors.orange[700])),
+                    const SizedBox(height: 4),
+                    Text(_usersError!, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                  ],
+                ),
+              ),
+            )
+          else if (_users.isEmpty && !_isLoadingUsers)
             const Center(child: Text('No hay usuarios registrados'))
           else
             ListView.separated(
@@ -289,7 +341,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
               ),
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: actionColor.withOpacity(0.1), shape: BoxShape.circle),
+                decoration: BoxDecoration(color: actionColor.withAlpha((0.1 * 255).toInt()), shape: BoxShape.circle),
                 child: Icon(actionIcon, size: 20, color: actionColor),
               ),
             ],
@@ -318,7 +370,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: (data.reduce((a, b) => math.max(a, b)) as num).toDouble() + 5,
+        maxY: data.reduce((a, b) => math.max(a, b)) + 5,
         barTouchData: BarTouchData(enabled: false),
         titlesData: FlTitlesData(show: false),
         gridData: FlGridData(show: false),
@@ -348,7 +400,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: (values.reduce((a, b) => math.max(a, b)) as num).toDouble() + 5,
+        maxY: values.reduce((a, b) => math.max(a, b)) + 5,
         barTouchData: BarTouchData(enabled: true),
         titlesData: FlTitlesData(
           show: true,
@@ -403,7 +455,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
             barWidth: 3,
             isStrokeCapRound: true,
             dotData: FlDotData(show: true),
-            belowBarData: BarAreaData(show: true, color: color.withOpacity(0.1)),
+            belowBarData: BarAreaData(show: true, color: color.withAlpha((0.1 * 255).toInt())),
           ),
         ],
       ),
@@ -418,7 +470,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: (values.reduce((a, b) => math.max(a, b)) as num).toDouble() + 5,
+        maxY: values.reduce((a, b) => math.max(a, b)) + 5,
         barTouchData: BarTouchData(enabled: false),
         titlesData: FlTitlesData(show: false),
         gridData: FlGridData(show: false),
