@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiClient {
-  static const String baseUrl = "http://192.168.50.20:8000";
+  static const String baseUrl = "http://192.168.50.20:8000";  //192.168.50.20
   static const String apiV1 = "/api/v1";
 
   static Future<http.Response> post(String endpoint, Map<String, dynamic> body, {Map<String, String>? headers, String? token}) async {
@@ -20,7 +20,7 @@ class ApiClient {
       url,
       headers: defaultHeaders,
       body: jsonEncode(body),
-    ).timeout(const Duration(seconds: 10));
+    ).timeout(const Duration(seconds: 30));
   }
 
   static Future<http.Response> postForm(String endpoint, Map<String, String> body) async {
@@ -30,7 +30,7 @@ class ApiClient {
       url,
       headers: {"Content-Type": "application/x-www-form-urlencoded"},
       body: body,
-    ).timeout(const Duration(seconds: 10));
+    ).timeout(const Duration(seconds: 30));
   }
 
   static Future<http.Response> get(String endpoint, {String? token}) async {
@@ -40,7 +40,7 @@ class ApiClient {
       headers["Authorization"] = "Bearer $token";
     }
     print("Sending GET to $url");
-    return await http.get(url, headers: headers).timeout(const Duration(seconds: 10));
+    return await http.get(url, headers: headers).timeout(const Duration(seconds: 30));
   }
 
   static Future<http.Response> putDirect(String endpoint, Map<String, dynamic> body, {String? token}) async {
@@ -54,7 +54,7 @@ class ApiClient {
       url,
       headers: headers,
       body: jsonEncode(body),
-    ).timeout(const Duration(seconds: 10));
+    ).timeout(const Duration(seconds: 30));
   }
 
   static Future<http.Response> deleteDirect(String endpoint, {String? token}) async {
@@ -64,6 +64,6 @@ class ApiClient {
       headers["Authorization"] = "Bearer $token";
     }
     print("Sending DELETE to $url");
-    return await http.delete(url, headers: headers).timeout(const Duration(seconds: 10));
+    return await http.delete(url, headers: headers).timeout(const Duration(seconds: 30));
   }
 }

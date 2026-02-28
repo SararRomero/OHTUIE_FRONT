@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'home_service.dart';
 import 'edit_period_screen.dart';
 import 'add_symptoms_screen.dart';
+import '../profile/profile_screen.dart';
+import '../profile/user_service.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -14,12 +16,31 @@ class UserHomeScreen extends StatefulWidget {
 class _UserHomeScreenState extends State<UserHomeScreen> {
   bool _isLoading = true;
   Map<String, dynamic>? _predictionData;
-  final String _userName = "Luisa"; // Default, should fetch from current user
+  String _userName = "...";
+  String _email = "";
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _loadAllData();
+  }
+
+  Future<void> _loadAllData() async {
+    await Future.wait([
+      _loadData(),
+      _loadUserProfile(),
+    ]);
+  }
+
+  Future<void> _loadUserProfile() async {
+    final result = await UserService.getUserMe();
+    if (mounted && result['success']) {
+      setState(() {
+        final fullName = result['data']['full_name'] ?? "Usuario";
+        _userName = fullName.split(' ')[0]; // Get only first name
+        _email = result['data']['email'] ?? "";
+      });
+    }
   }
 
   Future<void> _loadData() async {
@@ -100,7 +121,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           child: IconButton(
             icon: const Icon(Icons.menu, size: 20),
             onPressed: () {
-              // Menu action
+               Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              ).then((_) => _loadAllData());
             },
           ),
         ),
@@ -108,89 +132,194 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
+  String _indicatorMessage = "";
+
   Widget _buildCycleProgress() {
     if (_isLoading) {
       return const SizedBox(
-        height: 200,
+        height: 250,
         child: Center(child: CircularProgressIndicator(color: Color(0xFFEBD8F5))),
       );
     }
 
-    // Logic for days until ovulation
-    int daysUntilOvulation = 0;
-    int daysLeft = 0;
+    // --- LOGIC ---
+    DateTime now = DateTime.now();
+    DateTime today = DateTime(now.year, now.month, now.day);
     
-    if (_predictionData != null && _predictionData!['ovulation_date'] != null) {
-      final ovulationDate = DateTime.parse(_predictionData!['ovulation_date']);
-      daysUntilOvulation = ovulationDate.difference(DateTime.now()).inDays;
-      if (daysUntilOvulation < 0) daysUntilOvulation = 0;
-      
-      if (_predictionData!['next_period_start'] != null) {
-        final nextPeriod = DateTime.parse(_predictionData!['next_period_start']);
-        daysLeft = nextPeriod.difference(DateTime.now()).inDays;
-        if (daysLeft < 0) daysLeft = 0;
-      }
+    // Cycle info from predictions
+    int avgCycle = _predictionData?['avg_cycle_duration'] ?? 28;
+    int periodDuration = _predictionData?['period_duration'] ?? 5;
+    
+    DateTime lastPeriodStart = today; // Default fallback
+    if (_predictionData != null && _predictionData!['next_period_start'] != null) {
+      DateTime nextPeriod = DateTime.parse(_predictionData!['next_period_start']);
+      lastPeriodStart = nextPeriod.subtract(Duration(days: avgCycle));
     }
 
-    return Stack(
-      alignment: Alignment.center,
+    // Days since last period start
+    int currentCycleDay = today.difference(lastPeriodStart).inDays + 1;
+    if (currentCycleDay > avgCycle) currentCycleDay = (currentCycleDay % avgCycle);
+    if (currentCycleDay <= 0) currentCycleDay = 1;
+
+    double progress = (currentCycleDay - 1) / avgCycle;
+
+    // Stage dates
+    DateTime ovulationDate = DateTime.parse(_predictionData?['ovulation_date'] ?? today.toIso8601String());
+    DateTime fertileStart = DateTime.parse(_predictionData?['fertile_window']?['start'] ?? today.toIso8601String());
+    
+    int ovulationDay = ovulationDate.difference(lastPeriodStart).inDays + 1;
+    int fertileDay = fertileStart.difference(lastPeriodStart).inDays + 1;
+
+    // Determine current phase and next phase
+    String currentPhaseText = "Fase Folicular";
+    Color phaseColor = const Color(0xFFA5D6A7); // Pastel Green
+    
+    String nextStageTitle = "";
+    int daysToNext = 0;
+    Color nextStageColor = Colors.grey;
+
+    if (currentCycleDay <= periodDuration) {
+      currentPhaseText = "Menstruación";
+      phaseColor = const Color(0xFFFFCDD2); // Pastel Pink
+      nextStageTitle = "Ventana Fértil";
+      daysToNext = fertileDay - currentCycleDay;
+      nextStageColor = const Color(0xFFFFF59D); // Pastel Yellow
+    } else if (currentCycleDay < fertileDay) {
+      currentPhaseText = "Fase Folicular";
+      phaseColor = const Color(0xFFA5D6A7); // Pastel Green
+      nextStageTitle = "Ventana Fértil";
+      daysToNext = fertileDay - currentCycleDay;
+      nextStageColor = const Color(0xFFFFF59D); // Pastel Yellow
+    } else if (currentCycleDay < ovulationDay) {
+      currentPhaseText = "Ventana Fértil";
+      phaseColor = const Color(0xFFFFF59D); // Pastel Yellow
+      nextStageTitle = "Ovulación";
+      daysToNext = ovulationDay - currentCycleDay;
+      nextStageColor = const Color(0xFFFFE082); // Gold/Yellow
+    } else if (currentCycleDay == ovulationDay) {
+      currentPhaseText = "Ovulación";
+      phaseColor = const Color(0xFFFFB74D); // Orange/Yellow
+      nextStageTitle = "Próximo Periodo";
+      daysToNext = avgCycle - currentCycleDay + 1;
+      nextStageColor = const Color(0xFFFFCDD2); // Pastel Pink
+    } else {
+      currentPhaseText = "Fase Lútea";
+      phaseColor = const Color(0xFFCE93D8); // Pastel Purple
+      nextStageTitle = "Próximo Periodo";
+      daysToNext = avgCycle - currentCycleDay + 1;
+      nextStageColor = const Color(0xFFFFCDD2); // Pastel Pink
+    }
+
+    String countdownText = daysToNext == 0 ? "¡Hoy!" : "faltan $daysToNext días para $nextStageTitle";
+
+    return Column(
       children: [
-        // Background Shadow Circle
-        Container(
-          width: 250,
-          height: 250,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.pink.withAlpha(15),
-                blurRadius: 30,
-                spreadRadius: 8,
+        if (_indicatorMessage.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text(
+              _indicatorMessage,
+              style: const TextStyle(color: Colors.pinkAccent, fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+          ),
+        GestureDetector(
+          onTapDown: (details) {
+            // Detect tap on indicators based on angle
+            final RenderBox box = context.findRenderObject() as RenderBox;
+            final Offset localOffset = details.localPosition;
+            final Offset center = Offset(box.size.width / 2, 250 / 2 + ( _indicatorMessage.isNotEmpty ? 23 : 0)); // Approx center
+            
+            final double dx = localOffset.dx - center.dx;
+            final double dy = localOffset.dy - center.dy;
+            double angle = math.atan2(dy, dx) + math.pi / 2;
+            if (angle < 0) angle += 2 * math.pi;
+            
+            double tapDay = (angle / (2 * math.pi)) * avgCycle;
+            
+            if ((tapDay - 1).abs() < 1) {
+              setState(() => _indicatorMessage = "Inicio del Periodo");
+            } else if ((tapDay - fertileDay).abs() < 1) {
+              setState(() => _indicatorMessage = "Inicio Ventana Fértil");
+            } else if ((tapDay - ovulationDay).abs() < 1) {
+              setState(() => _indicatorMessage = "Día de Ovulación");
+            } else {
+              setState(() => _indicatorMessage = "");
+            }
+            
+            Future.delayed(const Duration(seconds: 3), () {
+              if (mounted) setState(() => _indicatorMessage = "");
+            });
+          },
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Background Shadow Circle
+              Container(
+                width: 250,
+                height: 250,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: phaseColor.withAlpha(30),
+                      blurRadius: 40,
+                      spreadRadius: 10,
+                    ),
+                  ],
+                ),
+              ),
+              // Progress Ring
+              SizedBox(
+                width: 240,
+                height: 240,
+                child: CustomPaint(
+                  painter: CycleProgressPainter(
+                    progress: progress, 
+                    color: phaseColor,
+                    avgCycle: avgCycle,
+                    fertileDay: fertileDay,
+                    ovulationDay: ovulationDay,
+                    periodDuration: periodDuration,
+                  ),
+                ),
+              ),
+              // Inner Content
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    currentPhaseText,
+                    style: const TextStyle(color: Colors.black54, fontSize: 13),
+                  ),
+                  Text(
+                    '$currentCycleDay',
+                    style: const TextStyle(
+                      fontSize: 64,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const Text(
+                     'día del ciclo',
+                     style: TextStyle(color: Colors.black38, fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 15),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: nextStageColor, width: 2),
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    child: Text(
+                      countdownText,
+                      style: TextStyle(color: Colors.grey[700], fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ),
-        // Progress Ring
-        SizedBox(
-          width: 240,
-          height: 240,
-          child: CustomPaint(
-            painter: CycleProgressPainter(
-              progress: 0.7, 
-              color: const Color(0xFFEBD8F5),
-            ),
-          ),
-        ),
-        // Inner Content
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Ovulación en',
-              style: TextStyle(color: Colors.black54, fontSize: 13),
-            ),
-            Text(
-              '$daysUntilOvulation días',
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                'faltan $daysLeft días',
-                style: const TextStyle(color: Colors.grey, fontSize: 11),
-              ),
-            ),
-          ],
         ),
       ],
     );
@@ -201,14 +330,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _buildActionButton(
-          icon: Icons.water_drop_outlined,
+          icon: Icons.edit,
           label: "Editar",
           color: const Color(0xFFEBD8F5),
           onTap: () {
              Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const EditPeriodScreen()),
-            ).then((_) => _loadData());
+            ).then((_) => _loadAllData());
           },
         ),
         _buildActionButton(
@@ -220,7 +349,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const AddSymptomsScreen()),
-            ).then((_) => _loadData());
+            ).then((_) => _loadAllData());
           },
         ),
       ],
@@ -266,21 +395,27 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   Widget _buildPredictionCards() {
     // Extraction helper
     String formatDate(String? dateStr) {
-      if (dateStr == null) return "TBD";
+      if (dateStr == null) return "Pendiente";
       final date = DateTime.parse(dateStr);
       final months = [
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
         "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
       ];
-      return "${months[date.month - 1]} ${date.day}";
+      return "${date.day} de ${months[date.month - 1]}";
     }
 
     // Helper for relative text
     String getDaysRemaining(String? dateStr) {
-       if (dateStr == null) return "Proximamente";
+       if (dateStr == null) return "Ingresa tu ciclo";
        final date = DateTime.parse(dateStr);
-       final diff = date.difference(DateTime.now()).inDays;
-       if (diff <= 0) return "Muy pronto";
+       final now = DateTime.now();
+       final today = DateTime(now.year, now.month, now.day);
+       final target = DateTime(date.year, date.month, date.day);
+       
+       final diff = target.difference(today).inDays;
+       if (diff == 0) return "¡Hoy!";
+       if (diff == 1) return "Mañana";
+       if (diff < 0) return "Pasado";
        return "En $diff días aprox";
     }
 
@@ -299,7 +434,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           date: formatDate(_predictionData?['fertile_window']?['start']),
           subtitle: getDaysRemaining(_predictionData?['fertile_window']?['start']),
           color: const Color(0xFFFFE5E9),
-          bubbleOnLeft: false,
+          bubbleOnLeft: true,
         ),
         const SizedBox(height: 12),
         _buildCard(
@@ -396,8 +531,19 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 class CycleProgressPainter extends CustomPainter {
   final double progress;
   final Color color;
+  final int avgCycle;
+  final int fertileDay;
+  final int ovulationDay;
+  final int periodDuration;
 
-  CycleProgressPainter({required this.progress, required this.color});
+  CycleProgressPainter({
+    required this.progress, 
+    required this.color,
+    required this.avgCycle,
+    required this.fertileDay,
+    required this.ovulationDay,
+    required this.periodDuration,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -405,9 +551,9 @@ class CycleProgressPainter extends CustomPainter {
     final radius = size.width / 2;
     
     final paint = Paint()
-      ..color = color.withAlpha(60)
+      ..color = Colors.grey.withAlpha(30)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 32
+      ..strokeWidth = 28
       ..strokeCap = StrokeCap.round;
 
     // Background track
@@ -419,7 +565,7 @@ class CycleProgressPainter extends CustomPainter {
       paint,
     );
 
-    // Progress track
+    // Progress track with Gradient feel
     paint.color = color;
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
@@ -429,24 +575,39 @@ class CycleProgressPainter extends CustomPainter {
       paint,
     );
 
-    // Handle (Dot)
+    // STATIC INDICATORS
+    void drawIndicator(int day, Color indicatorColor) {
+      final angle = -math.pi / 2 + (2 * math.pi * ((day - 1) / avgCycle));
+      final offset = Offset(
+        center.dx + radius * math.cos(angle),
+        center.dy + radius * math.sin(angle),
+      );
+      
+      final dotPaint = Paint()..color = Colors.white..style = PaintingStyle.fill;
+      canvas.drawCircle(offset, 10, dotPaint);
+      
+      final borderPaint = Paint()..color = indicatorColor..style = PaintingStyle.stroke..strokeWidth = 3;
+      canvas.drawCircle(offset, 10, borderPaint);
+    }
+
+    drawIndicator(1, const Color(0xFFFFCDD2)); // Period Start (Pink)
+    drawIndicator(fertileDay, const Color(0xFFFFF59D)); // Fertile Start (Yellow)
+    drawIndicator(ovulationDay, const Color(0xFFFFB74D)); // Ovulation (Orange)
+
+    // Handle (Current Progress Dot)
     final angle = -math.pi / 2 + (2 * math.pi * progress);
     final handleOffset = Offset(
       center.dx + radius * math.cos(angle),
       center.dy + radius * math.sin(angle),
     );
 
-    final dotPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    
+    final dotPaint = Paint()..color = Colors.white..style = PaintingStyle.fill;
     canvas.drawCircle(handleOffset, 16, dotPaint);
 
     final borderPaint = Paint()
-      ..color = const Color(0xFFB39DDB)
+      ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
-    
+      ..strokeWidth = 4;
     canvas.drawCircle(handleOffset, 16, borderPaint);
   }
 

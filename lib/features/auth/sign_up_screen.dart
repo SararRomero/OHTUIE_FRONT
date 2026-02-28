@@ -31,6 +31,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
+    // Email format validation
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, ingresa un formato de email válido')),
+      );
+      return;
+    }
+
+    // Password length validation
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('La contraseña debe tener al menos 6 caracteres')),
+      );
+      return;
+    }
+
     if (!_acceptedTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Debes aceptar los términos y condiciones')),
@@ -67,8 +84,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFFFE5E9), 
-              Color(0xFFEBD8F5), 
+              Color(0xFFFFF8F9),
+              Color(0xFFFFE5E9),
             ],
           ),
         ),
@@ -117,9 +134,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _nameController,
+                        maxLength: 20,
                         decoration: InputDecoration(
+                          hintText: 'Máximo 20 caracteres',
                           prefixIcon: const Icon(Icons.person_outline),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
+                          counterText: "",
                         ),
                         textCapitalization: TextCapitalization.words,
                       ),
@@ -129,10 +149,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _emailController,
+                        maxLength: 50,
                         decoration: InputDecoration(
                           hintText: 'tu@email.com',
                           prefixIcon: const Icon(Icons.email_outlined),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
+                          counterText: "",
                         ),
                         keyboardType: TextInputType.emailAddress,
                       ),
@@ -143,13 +165,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscureText,
+                        maxLength: 20,
                         decoration: InputDecoration(
+                          hintText: 'Mínimo 6 caracteres',
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
                             icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined),
                             onPressed: () => setState(() => _obscureText = !_obscureText),
                           ),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
+                          counterText: "",
+                          helperText: 'Mínimo 6 y máximo 20 caracteres',
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -193,6 +219,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             backgroundColor: const Color(0xFFFFCCE5), 
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                            elevation: 0,
                           ),
                           child: _isLoading 
                             ? const CircularProgressIndicator(color: Colors.white)

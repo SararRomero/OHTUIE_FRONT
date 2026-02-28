@@ -17,13 +17,18 @@ class HomeService {
     }
   }
 
-  static Future<Map<String, dynamic>> saveCycle(DateTime startDate) async {
+  static Future<Map<String, dynamic>> saveCycle(DateTime startDate, {DateTime? endDate}) async {
     try {
       final token = await AuthService.getToken();
-      final response = await ApiClient.post("/cycles/", {
+      final Map<String, dynamic> data = {
         "start_date": startDate.toIso8601String().split('T')[0],
         "notes": "Actualización manual"
-      }, token: token);
+      };
+      if (endDate != null) {
+        data["end_date"] = endDate.toIso8601String().split('T')[0];
+      }
+      
+      final response = await ApiClient.post("/cycles/", data, token: token);
       if (response.statusCode == 200 || response.statusCode == 201) {
         return {"success": true, "data": jsonDecode(response.body)};
       } else {

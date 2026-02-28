@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../auth/auth_service.dart';
 import '../auth/login_screen.dart';
+import '../home/user_home_screen.dart';
 
 class CycleSetupScreen extends StatefulWidget {
   final String name;
@@ -94,17 +95,24 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> with TickerProvider
     if (mounted) {
       setState(() => _isLoading = false);
       if (result['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Registro exitoso! Por favor, inicia sesión.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (route) => false,
-        );
+        // Auto-login after registration
+        final loginResult = await AuthService.login(widget.email, widget.password);
+        if (mounted) {
+          if (loginResult['success']) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const UserHomeScreen()),
+              (route) => false,
+            );
+          } else {
+             // Fallback to login screen if auto-login fails for some reason
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
+              (route) => false,
+            );
+          }
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -475,6 +483,12 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> with TickerProvider
             ),
           ),
           const SizedBox(height: 10),
+          const Text(
+            "Ingresa el primer día de tu última menstruación",
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 5),
           const Text("Toca para cambiar", style: TextStyle(color: Colors.grey)),
           const Spacer(flex: 1),
       ],

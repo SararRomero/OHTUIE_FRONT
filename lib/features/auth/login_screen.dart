@@ -30,6 +30,15 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    // Email format validation
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, ingresa un formato de email válido')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     final result = await AuthService.login(email, password);
@@ -72,8 +81,8 @@ class _LoginScreenState extends State<LoginScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
+              Color(0xFFFFF8F9),
               Color(0xFFFFE5E9),
-              Color(0xFFEBD8F5),
             ],
           ),
         ),
@@ -99,7 +108,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: Colors.black),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SignUpScreen()),
+                    ),
                   ),
                 ),
               ),
@@ -146,10 +158,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _emailController,
+                        maxLength: 50, // Let's allow more for email but still limited
                         decoration: InputDecoration(
                           hintText: 'tu@email.com',
                           prefixIcon: const Icon(Icons.email_outlined),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
+                          counterText: "",
                         ),
                         keyboardType: TextInputType.emailAddress,
                       ),
@@ -160,6 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscureText,
+                        maxLength: 20,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
@@ -167,6 +182,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: () => setState(() => _obscureText = !_obscureText),
                           ),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
+                          counterText: "",
                         ),
                       ),
                       
@@ -195,6 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             backgroundColor: const Color(0xFFFFCCE5),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                            elevation: 0,
                           ),
                           child: _isLoading 
                             ? const CircularProgressIndicator(color: Colors.white)

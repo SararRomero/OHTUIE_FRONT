@@ -22,6 +22,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       return;
     }
 
+    // Email format validation
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, ingresa un formato de email válido')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     final result = await AuthService.recoverPassword(email);
@@ -59,8 +68,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
+              Color(0xFFFFF8F9),
               Color(0xFFFFE5E9),
-              Color(0xFFEBD8F5),
             ],
           ),
         ),
@@ -152,10 +161,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             backgroundColor: const Color(0xFFFFCCE5), 
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                            elevation: 0,
                           ),
                           child: _isLoading 
                             ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Send OTP Code', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            : const Text('Enviar Código', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
