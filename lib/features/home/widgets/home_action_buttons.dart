@@ -14,10 +14,10 @@ class HomeActionButtons extends StatelessWidget {
       children: [
         _buildActionButton(
           context: context,
-          icon: Icons.edit,
+          icon: Icons.water_drop_outlined,
           label: "Editar",
           color: const Color(0xFFC5B4E3), // Shaded purple like in user screenshot
-          iconColor: Colors.white,
+          iconColor: Colors.black87,
           onTap: () {
              Navigator.push(
               context,

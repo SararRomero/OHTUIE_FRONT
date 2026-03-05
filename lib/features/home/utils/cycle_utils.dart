@@ -55,6 +55,8 @@ class CycleUtils {
       'countdownText': isToday ? "Hoy" : "$daysToNext días",
       'nextStageColor': nextStageColor,
       'isToday': isToday,
+      'currentCycleDay': currentCycleDay,
+      'fertileDay': fertileDay,
     };
   }
 }

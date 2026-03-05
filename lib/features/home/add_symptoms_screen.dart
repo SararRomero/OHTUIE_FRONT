@@ -10,6 +10,7 @@ class AddSymptomsScreen extends StatefulWidget {
 
 class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
   bool _isLoading = false;
+  DateTime _selectedDate = DateTime.now();
   String? _selectedFlow;
   final List<String> _selectedSymptoms = [];
   final List<String> _selectedMoods = [];
@@ -39,12 +40,18 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadCurrentDayLog();
+    _loadLogForDate(_selectedDate);
   }
 
-  Future<void> _loadCurrentDayLog() async {
-    setState(() => _isLoading = true);
-    final result = await DailyLogService.getDailyLog(DateTime.now());
+  Future<void> _loadLogForDate(DateTime date) async {
+    setState(() {
+      _isLoading = true;
+      _selectedFlow = null;
+      _selectedSymptoms.clear();
+      _selectedMoods.clear();
+    });
+    
+    final result = await DailyLogService.getDailyLog(date);
     if (mounted && result['success'] && result['data'] != null) {
       final data = result['data'];
       setState(() {
@@ -56,10 +63,48 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
     if (mounted) setState(() => _isLoading = false);
   }
 
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFFEBD8F5),
+              onPrimary: Colors.white,
+              onSurface: Colors.black87,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFFF4081),
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+      _loadLogForDate(_selectedDate);
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    const months = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+    const weekdays = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"];
+    return "${weekdays[date.weekday - 1]}, ${date.day} de ${months[date.month - 1]}";
+  }
+
   Future<void> _saveLog() async {
     setState(() => _isLoading = true);
     final data = {
-      'date': DateTime.now().toIso8601String().split('T')[0],
+      'date': _selectedDate.toIso8601String().split('T')[0],
       'flow': _selectedFlow ?? 'none',
       'symptoms': _selectedSymptoms,
       'moods': _selectedMoods,
@@ -101,6 +146,8 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Column(
                           children: [
+                            const SizedBox(height: 10),
+                            _buildDateSelector(),
                             const SizedBox(height: 30),
                             _buildSectionTitle("Flujo"),
                             const SizedBox(height: 20),
@@ -136,8 +183,15 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
           Align(
             alignment: Alignment.centerLeft,
             child: IconButton(
-              icon: const Icon(Icons.close, color: Colors.black54),
               onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.chevron_left, color: Colors.black, size: 28),
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: const BorderSide(color: Color(0xFFF5F5F5)),
+                ),
+              ),
             ),
           ),
           const Text(
@@ -149,6 +203,27 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDateSelector() {
+    return GestureDetector(
+      onTap: () => _selectDate(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEEEEEE).withAlpha(150),
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Text(
+          _formatDate(_selectedDate),
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/cycle_utils.dart';
 import 'cycle_progress_painter.dart';
+import '../calendar_screen.dart';
 
 class CycleProgressIndicator extends StatefulWidget {
   final Map<String, dynamic> predictionData;
@@ -33,7 +34,7 @@ class _CycleProgressIndicatorState extends State<CycleProgressIndicator> {
     if (currentCycleDay > avgCycle) currentCycleDay = (currentCycleDay % avgCycle);
     if (currentCycleDay <= 0) currentCycleDay = 1;
 
-    double progress = (currentCycleDay - 1) / avgCycle;
+    double progress = currentCycleDay / avgCycle;
 
     DateTime ovulationDate = DateTime.parse(widget.predictionData['ovulation_date'] ?? today.toIso8601String());
     DateTime fertileStart = DateTime.parse(widget.predictionData['fertile_window']?['start'] ?? today.toIso8601String());
@@ -69,8 +70,8 @@ class _CycleProgressIndicatorState extends State<CycleProgressIndicator> {
           alignment: Alignment.center,
           children: [
             Container(
-              width: 250,
-              height: 250,
+              width: 275,
+              height: 275,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white,
@@ -97,35 +98,45 @@ class _CycleProgressIndicatorState extends State<CycleProgressIndicator> {
                 ),
               ),
             ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  countdownLabel,
-                  style: const TextStyle(color: Colors.black54, fontSize: 12, fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  countdownText,
-                  style: const TextStyle(
-                    fontSize: 38,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CalendarScreen(predictionData: widget.predictionData),
                   ),
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black12, width: 1.2),
-                    borderRadius: BorderRadius.circular(18),
+                );
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    countdownLabel,
+                    style: const TextStyle(color: Colors.black54, fontSize: 12, fontWeight: FontWeight.w500),
                   ),
-                  child: Text(
-                    "Día $currentCycleDay del ciclo",
-                    style: const TextStyle(color: Colors.black45, fontSize: 12, fontWeight: FontWeight.w600),
+                  const SizedBox(height: 8),
+                  Text(
+                    countdownText,
+                    style: const TextStyle(
+                      fontSize: 38,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black12, width: 1.2),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Text(
+                      "Día $currentCycleDay del ciclo",
+                      style: const TextStyle(color: Colors.black45, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

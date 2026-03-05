@@ -7,7 +7,7 @@ class DailyLogService {
     final dateStr = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
     try {
       final token = await AuthService.getToken();
-      final response = await ApiClient.get('/daily-logs/$dateStr', token: token);
+      final response = await ApiClient.get('/daily-logs/$dateStr/', token: token);
       if (response.statusCode == 200) {
         return {
           'success': true,

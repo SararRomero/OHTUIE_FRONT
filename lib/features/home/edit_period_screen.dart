@@ -38,75 +38,76 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final monthsToDisplay = List.generate(12, (index) => DateTime(now.year, index + 1));
+    // Only current month and 3 previous months
+    final monthsToDisplay = List.generate(4, (index) => DateTime(now.year, now.month - (3 - index)));
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8F9),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Edita tu periodo',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
-        ),
-        centerTitle: false,
-      ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: Color(0xFFEBD8F5)))
-        : Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-                child: Row(
+      body: SafeArea(
+        child: _isLoading 
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFFEBD8F5)))
+          : Stack(
+              children: [
+                Column(
                   children: [
-                    _buildStepIndicator("Inicio", _selectingStartDate, () => setState(() => _selectingStartDate = true)),
-                    const SizedBox(width: 12),
-                    _buildStepIndicator("Fin (Opcional)", !_selectingStartDate, () => setState(() => _selectingStartDate = false)),
+                    _buildCustomAppBar(),
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 100), // Extra bottom padding for floating button
+                        itemCount: monthsToDisplay.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 30),
+                        itemBuilder: (context, index) => _buildMonthCalendar(monthsToDisplay[index]),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(24),
-                  itemCount: monthsToDisplay.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 30),
-                  itemBuilder: (context, index) => _buildMonthCalendar(monthsToDisplay[index]),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: _buildSaveButton(),
                 ),
-              ),
-              _buildSaveButton(),
-            ],
-          ),
+              ],
+            ),
+      ),
     );
   }
 
-  Widget _buildStepIndicator(String label, bool isActive, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFFFB2C1) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFFFB2C1)),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isActive ? Colors.white : const Color(0xFFFFB2C1),
-            fontWeight: FontWeight.bold,
+  Widget _buildCustomAppBar() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.chevron_left, color: Colors.black, size: 28),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: Color(0xFFF5F5F5)),
+              ),
+            ),
           ),
-        ),
+          const Expanded(
+            child: Center(
+              child: Text(
+                'Edita tu periodo',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 48),
+        ],
       ),
     );
   }
+
 
   Widget _buildMonthCalendar(DateTime month) {
     final months = [
@@ -122,15 +123,21 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
           padding: const EdgeInsets.only(left: 8.0, bottom: 15),
           child: Text(
             yearMonthStr,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
         ),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.grey.withOpacity(0.2)),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(5),
+                blurRadius: 15,
+                offset: const Offset(0, 5),
+              ),
+            ],
           ),
           child: Column(
             children: [
@@ -148,7 +155,7 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
     final days = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: days.map((d) => Text(d, style: TextStyle(color: Colors.grey[400], fontWeight: FontWeight.bold, fontSize: 14))).toList(),
+      children: days.map((d) => Text(d, style: TextStyle(color: Colors.grey[400], fontWeight: FontWeight.bold, fontSize: 13))).toList(),
     );
   }
 
@@ -175,36 +182,53 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
             setState(() {
               if (_selectingStartDate) {
                 _selectedStartDate = date;
-                // Auto-clear end date if it's before new start date
-                if (_selectedEndDate != null && _selectedEndDate!.isBefore(_selectedStartDate)) {
-                  _selectedEndDate = null;
-                }
+                // Auto-selection logic: set end date based on duration
+                _selectedEndDate = date.add(Duration(days: _periodDuration - 1));
               } else {
                 if (date.isBefore(_selectedStartDate)) {
                   _selectedStartDate = date;
-                  _selectedEndDate = null;
-                  _selectingStartDate = false;
+                  _selectedEndDate = date.add(Duration(days: _periodDuration - 1));
                 } else {
                   _selectedEndDate = date;
                 }
               }
             });
           },
-          child: Container(
+          child: Stack(
             alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: (isStart || isEnd) 
-                ? const Color(0xFFFFB2C1) 
-                : (isInRange ? const Color(0xFFFFF0F3) : Colors.transparent),
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              "$i",
-              style: TextStyle(
-                fontWeight: isStart || isEnd || isInRange ? FontWeight.bold : FontWeight.normal,
-                color: (isStart || isEnd) ? Colors.white : (isInRange ? const Color(0xFFFF4081) : Colors.black87),
+            children: [
+              if (isInRange || isStart || isEnd)
+                Container(
+                  margin: EdgeInsets.only(
+                    left: isStart ? 20 : 0,
+                    right: isEnd ? 20 : 0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF7EFFF), // Very light purple
+                    borderRadius: BorderRadius.horizontal(
+                      left: isStart ? const Radius.circular(20) : Radius.zero,
+                      right: isEnd ? const Radius.circular(20) : Radius.zero,
+                    ),
+                  ),
+                ),
+              Container(
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: (isStart || isEnd) 
+                    ? const Color(0xFFEBD8F5) // Main purple
+                    : Colors.transparent,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  "$i",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: isStart || isEnd || isInRange ? FontWeight.bold : FontWeight.normal,
+                    color: (isStart || isEnd) ? Colors.white : (isInRange ? const Color(0xFF9C27B0) : Colors.black87),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       );
@@ -214,15 +238,26 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 7,
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
+      mainAxisSpacing: 8,
+      crossAxisSpacing: 0, // 0 spacing to make the range background connect
       children: dayWidgets,
     );
   }
 
   Widget _buildSaveButton() {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 30),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(0xFFFFF8F9).withOpacity(0.0),
+            const Color(0xFFFFF8F9).withOpacity(0.8),
+            const Color(0xFFFFF8F9),
+          ],
+        ),
+      ),
       child: SizedBox(
         width: double.infinity,
         height: 55,
@@ -242,10 +277,11 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
             }
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFFCCE5),
-            foregroundColor: const Color(0xFFFF4081),
-            elevation: 0,
+            backgroundColor: const Color(0xFFD4E2FF),
+            foregroundColor: Colors.white,
+            elevation: 8,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            shadowColor: const Color(0xFFD4E2FF).withOpacity(0.5),
           ),
           child: _isLoading 
             ? const SizedBox(
@@ -253,7 +289,7 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
                 width: 20, 
                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
               )
-            : const Text('Actualizar Periodo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            : const Text('Guardar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         ),
       ),
     );

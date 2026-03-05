@@ -36,48 +36,23 @@ class CycleProgressPainter extends CustomPainter {
       -math.pi / 2,
       2 * math.pi,
       false,
-      paint,
+      paint..color = Colors.grey.withAlpha(30),
     );
 
-    // Progress track with SweepGradient
+    // Progress track
     if (progress > 0) {
-      final Rect arcRect = Rect.fromCircle(center: center, radius: radius);
+      final sweepAngle = 2 * math.pi * progress;
       
-      double periodEnd = periodDuration / avgCycle;
-      double follicularEnd = (fertileDay - 1) / avgCycle;
-      double fertileEnd = (ovulationDay - 1) / avgCycle;
-      double ovulationEnd = (ovulationDay) / avgCycle;
+      paint.shader = null;
+      paint.color = color;
       
-      final gradient = SweepGradient(
-        startAngle: -math.pi / 2,
-        endAngle: 3 * math.pi / 2,
-        colors: const [
-          Color(0xFFFFADAD), // Period
-          Color(0xFFCAFFBF), // Follicular
-          Color(0xFFFDFFB6), // Fertile
-          Color(0xFFFFD6A5), // Ovulation
-          Color(0xFFD7B9FF), // Luteal
-          Color(0xFFFFADAD), // Back to start
-        ],
-        stops: [
-          0.0,
-          periodEnd.clamp(0.01, 1.0),
-          follicularEnd.clamp(0.02, 1.0),
-          fertileEnd.clamp(0.03, 1.0),
-          ovulationEnd.clamp(0.04, 1.0),
-          1.0,
-        ],
-      );
-
-      paint.shader = gradient.createShader(arcRect);
       canvas.drawArc(
-        arcRect,
+        Rect.fromCircle(center: center, radius: radius),
         -math.pi / 2,
-        2 * math.pi * progress,
+        sweepAngle,
         false,
         paint,
       );
-      paint.shader = null;
     }
 
     // STATIC INDICATORS (Markers)
