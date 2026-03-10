@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'user_service.dart';
+import '../auth/auth_service.dart';
+import 'delete_account_screen.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final String name;
@@ -14,6 +16,8 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
+  late FocusNode _nameFocusNode;
+  late FocusNode _emailFocusNode;
   bool _isLoading = false;
 
   @override
@@ -21,12 +25,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.initState();
     _nameController = TextEditingController(text: widget.name);
     _emailController = TextEditingController(text: widget.email);
+    _nameFocusNode = FocusNode();
+    _emailFocusNode = FocusNode();
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _nameFocusNode.dispose();
+    _emailFocusNode.dispose();
     super.dispose();
   }
 
@@ -108,11 +116,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
                     child: Column(
                       children: [
-                        _buildEditableField("Nombre completo", _nameController, Icons.person_outline),
+                        _buildEditableField("Nombre completo", _nameController, _nameFocusNode, Icons.person_outline),
                         const SizedBox(height: 20),
-                        _buildEditableField("Email", _emailController, Icons.email_outlined, keyboardType: TextInputType.emailAddress),
+                        _buildEditableField("Email", _emailController, _emailFocusNode, Icons.email_outlined, keyboardType: TextInputType.emailAddress),
                         const SizedBox(height: 60),
                         _buildSaveButton(),
+                        const SizedBox(height: 20),
+                        _buildDeleteAccountButton(),
                       ],
                     ),
                   ),
@@ -164,37 +174,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildAvatarSection() {
-    return Stack(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: const Color(0xFFFFB2C1), width: 2),
-          ),
-          child: const CircleAvatar(
-            radius: 55,
-            backgroundColor: Color(0xFFFCE4EC),
-            child: Icon(Icons.person, size: 60, color: Color(0xFFFF4081)),
-          ),
-        ),
-        Positioned(
-          bottom: 0,
-          right: 0,
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFB2C1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.edit, size: 16, color: Colors.white),
-          ),
-        ),
-      ],
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0xFFFFB2C1), width: 2),
+      ),
+      child: const CircleAvatar(
+        radius: 55,
+        backgroundColor: Color(0xFFFCE4EC),
+        child: Icon(Icons.person, size: 60, color: Color(0xFFFF4081)),
+      ),
     );
   }
 
-  Widget _buildEditableField(String label, TextEditingController controller, IconData icon, {TextInputType keyboardType = TextInputType.text}) {
+  Widget _buildEditableField(String label, TextEditingController controller, FocusNode focusNode, IconData icon, {TextInputType keyboardType = TextInputType.text}) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -223,12 +217,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   color: Colors.black,
                 ),
               ),
-              const Icon(Icons.edit_outlined, size: 18, color: Colors.black54),
+              GestureDetector(
+                onTap: () => focusNode.requestFocus(),
+                child: const Icon(Icons.edit_outlined, size: 18, color: Colors.black54),
+              ),
             ],
           ),
           const SizedBox(height: 8),
           TextFormField(
             controller: controller,
+            focusNode: focusNode,
             keyboardType: keyboardType,
             style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             decoration: const InputDecoration(
@@ -259,6 +257,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ? const CircularProgressIndicator(color: Colors.white)
           : const Text('Guardar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
       ),
+    );
+  }
+
+  Widget _buildDeleteAccountButton() {
+    return TextButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const DeleteAccountScreen()),
+        );
+      },
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.red[300],
+      ),
+      child: const Text('Eliminar cuenta', style: TextStyle(fontSize: 16)),
     );
   }
 }

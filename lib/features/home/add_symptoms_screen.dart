@@ -24,17 +24,20 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
   };
 
   final List<Map<String, String>> _symptomOptions = [
-    {'id': 'aching_head', 'label': 'Dolor de Cabeza', 'icon': '頭'},
-    {'id': 'add_weight', 'label': 'Aumento Peso', 'icon': '⚖️'},
-    {'id': 'cramps', 'label': 'Cólicos', 'icon': '⚡'},
-    {'id': 'bloating', 'label': 'Hinchazón', 'icon': '🎈'},
+    {'id': 'aching_head', 'label': 'Dolor de cabeza', 'imagePath': 'lib/assets/image/dolor_de_cabeza.png'},
+    {'id': 'add_weight', 'label': 'Aumento de peso', 'imagePath': 'lib/assets/image/peso.png'},
+    {'id': 'cramps', 'label': 'Cólicos', 'imagePath': 'lib/assets/image/colicos.png'},
+    {'id': 'bloating', 'label': 'Hinchazón', 'imagePath': 'lib/assets/image/hinchazon.png'},
+    {'id': 'fatigue', 'label': 'Fatiga', 'imagePath': 'lib/assets/image/fatiga.png'},
   ];
 
   final List<Map<String, String>> _moodOptions = [
-    {'id': 'calm', 'label': 'Tranquila', 'icon': '😌'},
-    {'id': 'angry', 'label': 'Enojada', 'icon': '😡'},
-    {'id': 'happy', 'label': 'Feliz', 'icon': '😃'},
-    {'id': 'sad', 'label': 'Triste', 'icon': '😢'},
+    {'id': 'normal', 'label': 'Normal', 'imagePath': 'lib/assets/image/normal.png'},
+    {'id': 'angry', 'label': 'Enojada', 'imagePath': 'lib/assets/image/enojada.png'},
+    {'id': 'happy', 'label': 'Feliz', 'imagePath': 'lib/assets/image/feliz.png'},
+    {'id': 'sad', 'label': 'Triste', 'imagePath': 'lib/assets/image/triste.png'},
+    {'id': 'calm', 'label': 'Tranquila', 'imagePath': 'lib/assets/image/tranquila.png'},
+    {'id': 'tired', 'label': 'Cansada', 'imagePath': 'lib/assets/image/cansada.png'},
   ];
 
   @override
@@ -45,7 +48,6 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
 
   Future<void> _loadLogForDate(DateTime date) async {
     setState(() {
-      _isLoading = true;
       _selectedFlow = null;
       _selectedSymptoms.clear();
       _selectedMoods.clear();
@@ -60,7 +62,6 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
         _selectedMoods.addAll(List<String>.from(data['moods'] ?? []));
       });
     }
-    if (mounted) setState(() => _isLoading = false);
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -138,33 +139,26 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
             children: [
               _buildHeader(),
               Expanded(
-                child: _isLoading 
-                  ? const Center(child: CircularProgressIndicator(color: Color(0xFFEBD8F5)))
-                  : SingleChildScrollView(
-                      child: Container(
-                        height: MediaQuery.of(context).size.height - 180, // Approximate height minus header/footer
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          children: [
-                            const SizedBox(height: 10),
-                            _buildDateSelector(),
-                            const SizedBox(height: 30),
-                            _buildSectionTitle("Flujo"),
-                            const SizedBox(height: 20),
-                            _buildFlowSelector(),
-                            const Spacer(),
-                            _buildSectionTitle("Síntomas", showArrow: true),
-                            const SizedBox(height: 20),
-                            _buildSymptomGrid(),
-                            const Spacer(),
-                            _buildSectionTitle("Estados de ánimo", showArrow: true),
-                            const SizedBox(height: 20),
-                            _buildMoodGrid(),
-                            const Spacer(flex: 2),
-                          ],
-                        ),
-                      ),
-                    ),
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  children: [
+                    const SizedBox(height: 10),
+                    Center(child: _buildDateSelector()),
+                    const SizedBox(height: 30),
+                    _buildSectionTitle("Flujo"),
+                    const SizedBox(height: 16),
+                    _buildFlowSelector(),
+                    const SizedBox(height: 30),
+                    _buildSectionTitle("Síntomas"),
+                    const SizedBox(height: 16),
+                    _buildSymptomGrid(),
+                    const SizedBox(height: 30),
+                    _buildSectionTitle("Estados de ánimo"),
+                    const SizedBox(height: 16),
+                    _buildMoodGrid(),
+                    const SizedBox(height: 40),
+                  ],
+                ),
               ),
               _buildSaveButton(),
             ],
@@ -211,59 +205,113 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
     return GestureDetector(
       onTap: () => _selectDate(context),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFFEEEEEE).withAlpha(150),
-          borderRadius: BorderRadius.circular(25),
+          color: const Color(0xFFFFE5E9),
+          borderRadius: BorderRadius.circular(30),
         ),
-        child: Text(
-          _formatDate(_selectedDate),
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFB2C1), // Darker pink icon bg
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.calendar_today_outlined, color: Colors.white, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              _formatDate(_selectedDate),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title, {bool showArrow = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
+  Widget _buildSectionTitle(String title) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
         ),
-        if (showArrow)
-          const Icon(Icons.chevron_right, color: Colors.black54),
-      ],
+      ),
     );
   }
 
   Widget _buildFlowSelector() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: _flowOptions.entries.map((entry) {
-          final isSelected = _selectedFlow == entry.key;
-          return Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: GestureDetector(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double itemWidth = (constraints.maxWidth - 12) / 2; // 2 items per row, 12 spacing
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: _flowOptions.entries.map((entry) {
+            final isSelected = _selectedFlow == entry.key;
+            
+            Widget iconWidget;
+            if (entry.key == 'none') {
+              iconWidget = Stack(
+                alignment: Alignment.center,
+                children: [
+                   const Icon(Icons.water_drop, color: Colors.white, size: 20),
+                   Transform.rotate(
+                     angle: -0.785, // -45 degrees
+                     child: Container(width: 2, height: 24, color: const Color(0xFFFFB2C1)),
+                   ),
+                ],
+              );
+            } else if (entry.key == 'light') {
+              iconWidget = const Icon(Icons.water_drop, color: Colors.white, size: 20);
+            } else if (entry.key == 'medium') {
+              iconWidget = const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                   Icon(Icons.water_drop, color: Colors.white, size: 16),
+                   Icon(Icons.water_drop, color: Colors.white, size: 20),
+                ],
+              );
+            } else {
+              iconWidget = Stack(
+                alignment: Alignment.center,
+                children: [
+                   const Padding(
+                     padding: EdgeInsets.only(bottom: 8),
+                     child: Icon(Icons.water_drop, color: Colors.white, size: 16),
+                   ),
+                   const Row(
+                     mainAxisSize: MainAxisSize.min,
+                     children: [
+                       Icon(Icons.water_drop, color: Colors.white, size: 16),
+                       SizedBox(width: 2),
+                       Icon(Icons.water_drop, color: Colors.white, size: 16),
+                     ],
+                   ),
+                ],
+              );
+            }
+
+            return GestureDetector(
               onTap: () => setState(() => _selectedFlow = entry.key),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                width: itemWidth,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(30),
-                  border: isSelected 
-                      ? Border.all(color: const Color(0xFFFF4081), width: 2)
-                      : null,
+                  border: isSelected ? Border.all(color: const Color(0xFFFF4081), width: 1.5) : Border.all(color: Colors.transparent, width: 1.5),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withAlpha(5),
@@ -274,38 +322,47 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.water_drop,
-                      size: 18,
-                      color: isSelected ? const Color(0xFFFF4081) : const Color(0xFFFFB2C1),
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFF8FA3), // Pink circle
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(child: iconWidget),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      entry.value,
-                      style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? const Color(0xFFFF4081) : Colors.black87,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        entry.value,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: Colors.black87,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-          );
-        }).toList(),
-      ),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 
   Widget _buildSymptomGrid() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: _symptomOptions.map((s) {
-          final isSelected = _selectedSymptoms.contains(s['id']);
-          return Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: GestureDetector(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double itemWidth = (constraints.maxWidth - 12) / 2;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: _symptomOptions.map((s) {
+            final isSelected = _selectedSymptoms.contains(s['id']);
+            return GestureDetector(
               onTap: () {
                 setState(() {
                   if (isSelected) {
@@ -316,13 +373,12 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
                 });
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                width: itemWidth,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(25),
-                  border: isSelected 
-                      ? Border.all(color: const Color(0xFFFF4081), width: 2)
-                      : null,
+                  borderRadius: BorderRadius.circular(30),
+                  border: isSelected ? Border.all(color: const Color(0xFFFF4081), width: 1.5) : Border.all(color: Colors.transparent, width: 1.5),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withAlpha(5),
@@ -333,35 +389,44 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
                 ),
                 child: Row(
                   children: [
-                    Text(s['icon']!, style: const TextStyle(fontSize: 22)),
+                    Image.asset(
+                      s['imagePath']!,
+                      width: 32,
+                      height: 32,
+                    ),
                     const SizedBox(width: 8),
-                    Text(
-                      s['label']!,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? const Color(0xFFFF4081) : Colors.black87,
+                    Expanded(
+                      child: Text(
+                        s['label']!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: Colors.black87,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-          );
-        }).toList(),
-      ),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 
   Widget _buildMoodGrid() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: _moodOptions.map((m) {
-          final isSelected = _selectedMoods.contains(m['id']);
-          return Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: GestureDetector(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double itemWidth = (constraints.maxWidth - 12) / 2;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: _moodOptions.map((m) {
+            final isSelected = _selectedMoods.contains(m['id']);
+            return GestureDetector(
               onTap: () {
                 setState(() {
                   if (isSelected) {
@@ -372,13 +437,12 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
                 });
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                width: itemWidth,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(25),
-                  border: isSelected 
-                      ? Border.all(color: const Color(0xFFFF4081), width: 2)
-                      : null,
+                  borderRadius: BorderRadius.circular(30),
+                  border: isSelected ? Border.all(color: const Color(0xFFFF4081), width: 1.5) : Border.all(color: Colors.transparent, width: 1.5),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withAlpha(5),
@@ -389,36 +453,56 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
                 ),
                 child: Row(
                   children: [
-                    Text(m['icon']!, style: const TextStyle(fontSize: 22)),
+                    Image.asset(
+                      m['imagePath']!,
+                      width: 32,
+                      height: 32,
+                    ),
                     const SizedBox(width: 8),
-                    Text(
-                      m['label']!,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? const Color(0xFFFF4081) : Colors.black87,
+                    Expanded(
+                      child: Text(
+                        m['label']!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: Colors.black87,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-          );
-        }).toList(),
-      ),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 
   Widget _buildSaveButton() {
     return Padding(
       padding: const EdgeInsets.all(24.0),
-      child: SizedBox(
+      child: Container(
         width: double.infinity,
         height: 55,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blueAccent.withAlpha(80),
+              blurRadius: 15,
+              spreadRadius: 3,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(color: Colors.blue.withAlpha(150), width: 1.5),
+        ),
         child: ElevatedButton(
           onPressed: _isLoading ? null : _saveLog,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFEBD8F5),
+            backgroundColor: const Color(0xFF90CAF9), // Pastel blue
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             elevation: 0,

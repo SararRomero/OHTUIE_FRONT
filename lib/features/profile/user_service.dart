@@ -49,4 +49,28 @@ class UserService {
       return {"success": false, "message": "Connection error: $e"};
     }
   }
+
+  static Future<Map<String, dynamic>> deleteUserMe() async {
+    try {
+      final token = await AuthService.getToken();
+      if (token == null) return {"success": false, "message": "No token found"};
+
+      final response = await ApiClient.deleteDirect("/users/me", token: token);
+      
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return {"success": true, "message": "User deleted successfully"};
+      } else {
+        String errorMsg = "Failed to delete account";
+        try {
+          if (response.body.isNotEmpty) {
+            final error = jsonDecode(response.body);
+            errorMsg = error['detail'] ?? errorMsg;
+          }
+        } catch (_) {}
+        return {"success": false, "message": errorMsg};
+      }
+    } catch (e) {
+      return {"success": false, "message": "Connection error: $e"};
+    }
+  }
 }

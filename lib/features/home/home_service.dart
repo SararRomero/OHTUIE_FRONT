@@ -3,16 +3,27 @@ import '../../core/network/api_client.dart';
 import '../auth/auth_service.dart';
 
 class HomeService {
+  static Map<String, dynamic>? _lastPrediction;
+
   static Future<Map<String, dynamic>> getPredictions() async {
     try {
       final token = await AuthService.getToken();
       final response = await ApiClient.get("/cycles/prediction", token: token);
       if (response.statusCode == 200) {
-        return {"success": true, "data": jsonDecode(response.body)};
+        final data = jsonDecode(response.body);
+        _lastPrediction = data;
+        return {"success": true, "data": data};
       } else {
+        // Return cached data if available even on error
+        if (_lastPrediction != null) {
+          return {"success": true, "data": _lastPrediction};
+        }
         return {"success": false, "message": "Error al obtener predicciones"};
       }
     } catch (e) {
+      if (_lastPrediction != null) {
+        return {"success": true, "data": _lastPrediction};
+      }
       return {"success": false, "message": "Error de conexión: $e"};
     }
   }

@@ -59,17 +59,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
   bool _isLoadingLog = false;
 
   final Map<String, Map<String, String>> _moodOptions = {
-    'calm': {'label': 'Tranquila', 'icon': '😌'},
-    'angry': {'label': 'Enojada', 'icon': '😡'},
-    'happy': {'label': 'Feliz', 'icon': '😃'},
-    'sad': {'label': 'Triste', 'icon': '😢'},
+    'normal': {'label': 'Normal', 'imagePath': 'lib/assets/image/normal.png'},
+    'angry': {'label': 'Enojada', 'imagePath': 'lib/assets/image/enojada.png'},
+    'happy': {'label': 'Feliz', 'imagePath': 'lib/assets/image/feliz.png'},
+    'sad': {'label': 'Triste', 'imagePath': 'lib/assets/image/triste.png'},
+    'calm': {'label': 'Tranquila', 'imagePath': 'lib/assets/image/tranquila.png'},
+    'tired': {'label': 'Cansada', 'imagePath': 'lib/assets/image/cansada.png'},
   };
 
   final Map<String, Map<String, String>> _symptomOptions = {
-    'aching_head': {'label': 'Dolor de Cabeza', 'icon': '頭'},
-    'add_weight': {'label': 'Aumento Peso', 'icon': '⚖️'},
-    'cramps': {'label': 'Cólicos', 'icon': '⚡'},
-    'bloating': {'label': 'Hinchazón', 'icon': '🎈'},
+    'aching_head': {'label': 'Dolor de cabeza', 'imagePath': 'lib/assets/image/dolor_de_cabeza.png'},
+    'add_weight': {'label': 'Aumento de peso', 'imagePath': 'lib/assets/image/peso.png'},
+    'cramps': {'label': 'Cólicos', 'imagePath': 'lib/assets/image/colicos.png'},
+    'bloating': {'label': 'Hinchazón', 'imagePath': 'lib/assets/image/hinchazon.png'},
+    'fatigue': {'label': 'Fatiga', 'imagePath': 'lib/assets/image/fatiga.png'},
   };
 
   final Map<String, String> _flowOptions = {
@@ -83,7 +86,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void initState() {
     super.initState();
     _predictionData = widget.predictionData ?? {};
+    if (widget.predictionData == null) {
+      _loadPredictions();
+    }
     _loadDailyLog(_selectedDay);
+  }
+
+  Future<void> _loadPredictions() async {
+    final result = await HomeService.getPredictions();
+    if (mounted && result['success']) {
+      setState(() {
+        _predictionData = result['data'];
+      });
+    }
   }
 
   Future<void> _loadDailyLog(DateTime date) async {

@@ -4,6 +4,9 @@ import '../auth/login_screen.dart';
 import 'user_service.dart';
 import 'edit_profile_screen.dart';
 import 'change_password_screen.dart';
+import '../home/calendar_screen.dart';
+import '../../core/widgets/logout_modal.dart';
+import 'cycle_history_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -42,98 +45,124 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _handleLogout() async {
-    await AuthService.logout();
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
-    }
+  void _handleLogout() {
+    showDialog(
+      context: context,
+      barrierColor: Colors.transparent, // Background blur handled by modal
+      builder: (context) => const LogoutModal(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FE), // Very light bluish/grey background
-      body: SafeArea(
-        child: _isLoading 
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFEBD8F5)))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'OHTUIE',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFFF4081),
-                          letterSpacing: 1.2,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFCCDDFF),
+              Color(0xFFEBD8F5),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: _isLoading 
+            ? const Center(child: CircularProgressIndicator(color: Colors.white))
+            : SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Top Header
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'OHTUIE',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFFF4081),
+                            letterSpacing: 1.2,
+                          ),
                         ),
+                        _buildMenuButton(),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                    
+                    // User Info Card
+                    _buildUserHeaderCard(),
+                    
+                    const SizedBox(height: 40),
+                    
+                    // General Section
+                    const Text(
+                      'General',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
-                      _buildMenuButton(),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
-                  
-                  // User Info Card
-                  _buildUserHeaderCard(),
-                  
-                  const SizedBox(height: 40),
-                  
-                  // General Section
-                  const Text(
-                    'General',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildMenuItem(Icons.access_time, "Historial de tus Ciclos"),
-                  _buildMenuItem(Icons.calendar_today_outlined, "Tu Calendario"),
-                  _buildMenuItem(Icons.swap_calls_outlined, "Emociones"),
-                  
-                  const SizedBox(height: 40),
-                  
-                  // Support Section
-                  const Text(
-                    'Support',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                    const SizedBox(height: 20),
+                    _buildMenuItem(
+                      Icons.access_time, 
+                      "Historial de tus Ciclos",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const CycleHistoryScreen()),
+                        );
+                      }
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildMenuItem(Icons.analytics_outlined, "Analisis de sus Ciclos"),
-                  _buildMenuItem(
-                    Icons.lock_outline, 
-                    "Cambiar Contraseña",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
-                      );
-                    }
-                  ),
-                  _buildMenuItem(
-                    Icons.logout, 
-                    "Log Out", 
-                    isLogout: true,
-                    onTap: _handleLogout,
-                  ),
-                ],
+                    _buildMenuItem(
+                      Icons.calendar_today_outlined, 
+                      "Tu Calendario",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const CalendarScreen()),
+                        );
+                      }
+                    ),
+                    _buildMenuItem(Icons.swap_calls_outlined, "Emociones"),
+                    
+                    const SizedBox(height: 40),
+                    
+                    // Support Section
+                    const Text(
+                      'Support',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildMenuItem(Icons.analytics_outlined, "Analisis de sus Ciclos"),
+                    _buildMenuItem(
+                      Icons.lock_outline, 
+                      "Cambiar Contraseña",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
+                        );
+                      }
+                    ),
+                    _buildMenuItem(
+                      Icons.logout, 
+                      "Salir", 
+                      isLogout: true,
+                      onTap: _handleLogout,
+                    ),
+                  ],
+                ),
               ),
-            ),
+        ),
       ),
     );
   }

@@ -43,8 +43,8 @@ class DailyLogSummary extends StatelessWidget {
               separatorBuilder: (_, __) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
                 final moodId = moods[index];
-                final moodInfo = moodOptions[moodId] ?? {'label': moodId, 'icon': '😶'};
-                return _buildChip(moodInfo['icon']!, moodInfo['label']!);
+                final moodInfo = moodOptions[moodId] ?? {'label': moodId, 'imagePath': 'lib/assets/image/normal.png'};
+                return _buildChip(moodInfo['imagePath']!, moodInfo['label']!);
               },
             ),
           ),
@@ -70,10 +70,10 @@ class DailyLogSummary extends StatelessWidget {
                   const SizedBox(width: 12),
                 ],
                 ...symptoms.map((symptomId) {
-                  final symptomInfo = symptomOptions[symptomId] ?? {'label': symptomId, 'icon': '💊'};
+                  final symptomInfo = symptomOptions[symptomId] ?? {'label': symptomId, 'imagePath': 'lib/assets/image/dolor_de_cabeza.png'};
                   return Padding(
                     padding: const EdgeInsets.only(right: 12),
-                    child: _buildChip(symptomInfo['icon']!, symptomInfo['label']!),
+                    child: _buildChip(symptomInfo['imagePath']!, symptomInfo['label']!),
                   );
                 }),
               ],
@@ -84,7 +84,7 @@ class DailyLogSummary extends StatelessWidget {
     );
   }
 
-  Widget _buildChip(String emoji, String label) {
+  Widget _buildChip(String imagePath, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -97,7 +97,7 @@ class DailyLogSummary extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 18)),
+          Image.asset(imagePath, width: 22, height: 22),
           const SizedBox(width: 8),
           Text(label, style: const TextStyle(fontSize: 14)),
         ],

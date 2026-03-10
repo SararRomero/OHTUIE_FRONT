@@ -25,6 +25,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   }
 
   Future<void> _loadAllData() async {
+    // If we have data already, we might not want to show the full loading spinner
+    // but rather just refresh in the background or show a subtle progress bar.
+    // For now, let's just make the requests concurrent for speed.
     await Future.wait([
       _loadData(),
       _loadUserProfile(),
@@ -42,7 +45,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    // Don't set _isLoading to true if we already have data (refreshing)
+    if (_predictionData == null) {
+      setState(() => _isLoading = true);
+    }
+    
     final result = await HomeService.getPredictions();
     if (mounted) {
       if (result['success']) {
@@ -59,29 +66,40 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F9),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-          child: Column(
-            children: [
-              _buildHeader(),
-              const Spacer(),
-              if (_isLoading)
-                const SizedBox(
-                  height: 250,
-                  child: Center(child: CircularProgressIndicator(color: Color(0xFFEBD8F5))),
-                )
-              else if (_predictionData != null)
-                CycleProgressIndicator(predictionData: _predictionData!)
-              else
-                const Text("Configura tu ciclo para ver el progreso"),
-              const SizedBox(height: 35),
-              HomeActionButtons(onRefresh: _loadAllData),
-              const SizedBox(height: 25),
-              PredictionCard(predictionData: _predictionData),
-              const Spacer(flex: 2),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.white,
+              Color(0xFFFFF0F2),
             ],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+            child: Column(
+              children: [
+                _buildHeader(),
+                const Spacer(),
+                if (_isLoading)
+                  const SizedBox(
+                    height: 250,
+                    child: Center(child: CircularProgressIndicator(color: Color(0xFFEBD8F5))),
+                  )
+                else if (_predictionData != null)
+                  CycleProgressIndicator(predictionData: _predictionData!)
+                else
+                  const Text("Configura tu ciclo para ver el progreso"),
+                const SizedBox(height: 35),
+                HomeActionButtons(onRefresh: _loadAllData),
+                const SizedBox(height: 25),
+                PredictionCard(predictionData: _predictionData),
+                const Spacer(flex: 2),
+              ],
+            ),
           ),
         ),
       ),

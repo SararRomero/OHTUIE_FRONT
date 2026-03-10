@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../features/auth/auth_service.dart';
 
 class LogoutModal extends StatelessWidget {
   const LogoutModal({super.key});
@@ -32,12 +33,12 @@ class LogoutModal extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFE1BEE7), // Soft purple/pink as in image
+                  color: Color(0xFF90CAF9), // Soft blue as requested
                 ),
               ),
               const SizedBox(height: 16),
               const Text(
-                '¿Estás segura que quieres salir?',
+                'Estas segura que quieres salir?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
@@ -70,13 +71,15 @@ class LogoutModal extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: TextButton(
-                      onPressed: () {
-                        // Handle logout logic here
-                        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                      onPressed: () async {
+                        await AuthService.logout();
+                        if (context.mounted) {
+                          Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                        }
                       },
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: const Color(0xFFF3E5F5), // Light purple background
+                        backgroundColor: const Color(0xFF90CAF9), // Light blue background
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),

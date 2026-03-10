@@ -258,38 +258,58 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
           ],
         ),
       ),
-      child: SizedBox(
-        width: double.infinity,
-        height: 55,
-        child: ElevatedButton(
-          onPressed: _isLoading ? null : () async {
-            setState(() => _isLoading = true);
-            final result = await HomeService.saveCycle(_selectedStartDate, endDate: _selectedEndDate);
-            if (mounted) {
-              setState(() => _isLoading = false);
-              if (result['success']) {
-                Navigator.pop(context);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(result['message'])),
-                );
-              }
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFD4E2FF),
-            foregroundColor: Colors.white,
-            elevation: 8,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-            shadowColor: const Color(0xFFD4E2FF).withOpacity(0.5),
+      child: Center(
+        child: Container(
+          width: double.infinity,
+          height: 60,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              // Outer Glow
+              BoxShadow(
+                color: const Color(0xFFBDD4FF).withOpacity(0.6),
+                blurRadius: 20,
+                spreadRadius: 5,
+                offset: const Offset(0, 0),
+              ),
+              // Subtler secondary glow
+              BoxShadow(
+                color: const Color(0xFFBDD4FF).withOpacity(0.4),
+                blurRadius: 10,
+                spreadRadius: 2,
+                offset: const Offset(0, 0),
+              ),
+            ],
           ),
-          child: _isLoading 
-            ? const SizedBox(
-                height: 20, 
-                width: 20, 
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-              )
-            : const Text('Guardar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : () async {
+              setState(() => _isLoading = true);
+              final result = await HomeService.saveCycle(_selectedStartDate, endDate: _selectedEndDate);
+              if (mounted) {
+                setState(() => _isLoading = false);
+                if (result['success']) {
+                  Navigator.pop(context);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(result['message'])),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFBDD4FF),
+              foregroundColor: Colors.white,
+              elevation: 0, // Elevation is handled by the manual shadows above
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            ),
+            child: _isLoading 
+              ? const SizedBox(
+                  height: 20, 
+                  width: 20, 
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                )
+              : const Text('Guardar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ),
         ),
       ),
     );
