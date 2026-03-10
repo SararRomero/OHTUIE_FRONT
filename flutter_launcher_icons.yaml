@@ -18,3 +18,4 @@ flutter_launcher_icons:
   macos:
     generate: true
     image_path: "lib/assets/image/logo_app.png"
+  
