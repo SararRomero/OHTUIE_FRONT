@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiClient {
-  static const String baseUrl = "http://192.168.50.20:8000";  //192.168.50.20
+  static const String baseUrl = "https://ohtuie-production.up.railway.app"; 
   static const String apiV1 = "/api/v1";
 
   static Future<http.Response> post(String endpoint, Map<String, dynamic> body, {Map<String, String>? headers, String? token}) async {
