@@ -9,11 +9,44 @@ class CycleProgressIndicator extends StatefulWidget {
   const CycleProgressIndicator({super.key, required this.predictionData});
 
   @override
-  State<CycleProgressIndicator> createState() => _CycleProgressIndicatorState();
+  State<CycleProgressIndicator> createState() => CycleProgressIndicatorState();
 }
 
-class _CycleProgressIndicatorState extends State<CycleProgressIndicator> {
+class CycleProgressIndicatorState extends State<CycleProgressIndicator> with SingleTickerProviderStateMixin {
   String _indicatorMessage = "";
+  late AnimationController _glowController;
+  late Animation<double> _glowAnimation;
+  String? _glowingMarker; // "fertile", "ovulation", "period", or null (handle)
+
+  @override
+  void initState() {
+    super.initState();
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _glowAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _glowController, curve: Curves.easeOut),
+    );
+    
+    _glowController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        setState(() => _glowingMarker = null);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _glowController.dispose();
+    super.dispose();
+  }
+
+  void triggerGlow({String? markerType}) {
+    setState(() => _glowingMarker = markerType);
+    _glowController.reset();
+    _glowController.forward();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,9 +86,7 @@ class _CycleProgressIndicatorState extends State<CycleProgressIndicator> {
     Color phaseColor = phaseInfo['phaseColor'];
     String countdownLabel = phaseInfo['countdownLabel'];
     String countdownText = phaseInfo['countdownText'];
-    Color nextStageColor = phaseInfo['nextStageColor'];
-    bool isToday = phaseInfo['isToday'];
-
+    
     return Column(
       children: [
         if (_indicatorMessage.isNotEmpty)
@@ -74,29 +105,36 @@ class _CycleProgressIndicatorState extends State<CycleProgressIndicator> {
               height: 275,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white,
+                color: Colors.transparent, 
                 boxShadow: [
                   BoxShadow(
-                    color: phaseColor.withAlpha(30),
-                    blurRadius: 40,
-                    spreadRadius: 10,
+                    color: const Color(0xFFF79AB0).withAlpha(40), // Rosa Pétalo difuminado
+                    blurRadius: 60,
+                    spreadRadius: 20,
                   ),
                 ],
               ),
             ),
-            SizedBox(
-              width: 240,
-              height: 240,
-              child: CustomPaint(
-                painter: CycleProgressPainter(
-                  progress: progress, 
-                  color: phaseColor,
-                  avgCycle: avgCycle,
-                  fertileDay: fertileDay,
-                  ovulationDay: ovulationDay,
-                  periodDuration: periodDuration,
-                ),
-              ),
+            AnimatedBuilder(
+              animation: _glowAnimation,
+              builder: (context, child) {
+                return SizedBox(
+                  width: 240,
+                  height: 240,
+                  child: CustomPaint(
+                    painter: CycleProgressPainter(
+                      progress: progress, 
+                      color: phaseColor,
+                      avgCycle: avgCycle,
+                      fertileDay: fertileDay,
+                      ovulationDay: ovulationDay,
+                      periodDuration: periodDuration,
+                      glowFactor: _glowAnimation.value,
+                      glowingMarker: _glowingMarker,
+                    ),
+                  ),
+                );
+              },
             ),
             GestureDetector(
               onTap: () {
@@ -132,7 +170,7 @@ class _CycleProgressIndicatorState extends State<CycleProgressIndicator> {
                     ),
                     child: Text(
                       "Día $currentCycleDay del ciclo",
-                      style: const TextStyle(color: Colors.black45, fontSize: 12, fontWeight: FontWeight.w600),
+                      style: const TextStyle(color: Colors.black54, fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],

@@ -17,6 +17,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   bool _isLoading = true;
   Map<String, dynamic>? _predictionData;
   String _userName = "...";
+  final GlobalKey<CycleProgressIndicatorState> _indicatorKey = GlobalKey<CycleProgressIndicatorState>();
 
   @override
   void initState() {
@@ -90,13 +91,19 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     child: Center(child: CircularProgressIndicator(color: Color(0xFFEBD8F5))),
                   )
                 else if (_predictionData != null)
-                  CycleProgressIndicator(predictionData: _predictionData!)
+                  CycleProgressIndicator(
+                    key: _indicatorKey,
+                    predictionData: _predictionData!,
+                  )
                 else
                   const Text("Configura tu ciclo para ver el progreso"),
                 const SizedBox(height: 35),
                 HomeActionButtons(onRefresh: _loadAllData),
                 const SizedBox(height: 25),
-                PredictionCard(predictionData: _predictionData),
+                PredictionCard(
+                  predictionData: _predictionData,
+                  onTap: (type) => _indicatorKey.currentState?.triggerGlow(markerType: type),
+                ),
                 const Spacer(flex: 2),
               ],
             ),

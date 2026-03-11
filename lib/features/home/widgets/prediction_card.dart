@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 class PredictionCard extends StatelessWidget {
   final Map<String, dynamic>? predictionData;
+  final void Function(String type)? onTap;
 
-  const PredictionCard({super.key, required this.predictionData});
+  const PredictionCard({super.key, required this.predictionData, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +50,7 @@ class PredictionCard extends StatelessWidget {
           subtitle: getDaysRemaining(predictionData?['fertile_window']?['start']),
           color: const Color(0xFFD4E2FF),
           bubbleOnLeft: true,
+          onTap: () => onTap?.call("fertile"),
         ),
         const SizedBox(height: 12),
         _buildCard(
@@ -57,6 +59,7 @@ class PredictionCard extends StatelessWidget {
           subtitle: getDaysRemaining(predictionData?['ovulation_date']),
           color: const Color(0xFFFFE5E9),
           bubbleOnLeft: true,
+          onTap: () => onTap?.call("ovulation"),
         ),
         const SizedBox(height: 12),
         _buildCard(
@@ -65,6 +68,7 @@ class PredictionCard extends StatelessWidget {
           subtitle: getDaysRemaining(predictionData?['next_period_start']),
           color: const Color(0xFFEBD8F5),
           bubbleOnLeft: true,
+          onTap: () => onTap?.call("period"),
         ),
       ],
     );
@@ -76,25 +80,29 @@ class PredictionCard extends StatelessWidget {
     required String subtitle,
     required Color color,
     required bool bubbleOnLeft,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      width: double.infinity,
-      height: 85,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(40),
-      ),
-      padding: const EdgeInsets.all(8),
-      child: Row(
-        children: [
-          if (bubbleOnLeft) ...[
-            _buildBubble(title),
-            Expanded(child: _buildCardDateInfo(date, subtitle, false)),
-          ] else ...[
-            Expanded(child: _buildCardDateInfo(date, subtitle, true)),
-            _buildBubble(title),
-          ]
-        ],
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        height: 85,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(40),
+        ),
+        padding: const EdgeInsets.all(8),
+        child: Row(
+          children: [
+            if (bubbleOnLeft) ...[
+              _buildBubble(title),
+              Expanded(child: _buildCardDateInfo(date, subtitle, false)),
+            ] else ...[
+              Expanded(child: _buildCardDateInfo(date, subtitle, true)),
+              _buildBubble(title),
+            ]
+          ],
+        ),
       ),
     );
   }
