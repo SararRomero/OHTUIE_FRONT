@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../auth/auth_service.dart';
 import '../../core/network/api_client.dart';
 
@@ -36,7 +35,6 @@ class UserService {
       if (email != null) body["email"] = email;
       if (password != null) body["password"] = password;
 
-      // ApiClient.putDirect handles the PUT request
       final response = await ApiClient.putDirect("/users/me", body, token: token);
       
       if (response.statusCode == 200) {
@@ -47,6 +45,51 @@ class UserService {
       }
     } catch (e) {
       return {"success": false, "message": "Connection error: $e"};
+    }
+  }
+
+  static Future<Map<String, dynamic>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final token = await AuthService.getToken();
+      if (token == null) return {"success": false, "message": "No token found"};
+
+      final body = {
+        "current_password": currentPassword,
+        "new_password": newPassword,
+      };
+
+      final response = await ApiClient.putDirect("/users/me/password", body, token: token);
+      
+      if (response.statusCode == 200) {
+        return {"success": true, "data": jsonDecode(response.body)};
+      } else {
+        final error = jsonDecode(response.body);
+        return {"success": false, "message": error['detail'] ?? "Failed to update password"};
+      }
+    } catch (e) {
+      return {"success": false, "message": "Connection error: $e"};
+    }
+  }
+
+  static Future<bool> verifyPassword(String password) async {
+    try {
+      final token = await AuthService.getToken();
+      if (token == null) return false;
+
+      final body = {"current_password": password, "new_password": "placeholder"};
+
+      final response = await ApiClient.post("/users/me/verify-password", body, token: token);
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['valid'] == true;
+      }
+      return false;
+    } catch (e) {
+      return false;
     }
   }
 
