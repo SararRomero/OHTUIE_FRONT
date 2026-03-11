@@ -9,7 +9,8 @@ import '../../core/widgets/logout_modal.dart';
 import 'cycle_history_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final Map<String, dynamic>? initialUserData;
+  const ProfileScreen({super.key, this.initialUserData});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -23,6 +24,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialUserData != null) {
+      _name = widget.initialUserData!['full_name'] ?? "Usuario";
+      _email = widget.initialUserData!['email'] ?? "";
+      _isLoading = false;
+    }
     _loadUserProfile();
   }
 

@@ -16,6 +16,7 @@ class UserHomeScreen extends StatefulWidget {
 class _UserHomeScreenState extends State<UserHomeScreen> {
   bool _isLoading = true;
   Map<String, dynamic>? _predictionData;
+  Map<String, dynamic>? _userProfileData;
   String _userName = "...";
 
   @override
@@ -38,7 +39,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     final result = await UserService.getUserMe();
     if (mounted && result['success']) {
       setState(() {
-        final fullName = result['data']['full_name'] ?? "Usuario";
+        _userProfileData = result['data'];
+        final fullName = _userProfileData!['full_name'] ?? "Usuario";
         _userName = fullName.split(' ')[0]; // Get only first name
       });
     }
@@ -144,10 +146,12 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           child: IconButton(
             icon: const Icon(Icons.menu, size: 20),
             onPressed: () {
-               Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              ).then((_) => _loadAllData());
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProfileScreen(initialUserData: _userProfileData),
+                  ),
+                ).then((_) => _loadAllData());
             },
           ),
         ),
