@@ -11,6 +11,7 @@ import 'widgets/calendar_month_selector.dart';
 import 'widgets/calendar_day_item.dart';
 import 'widgets/daily_log_summary.dart';
 import 'widgets/ovulation_flower_painter.dart';
+import 'edit_cycle_screen.dart';
 
 
 class CalendarScreen extends StatefulWidget {
@@ -312,16 +313,32 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          Column(
-            children: [
-              Container(
-                width: 45, height: 45,
-                decoration: const BoxDecoration(color: Color(0xFFD4E2FF), shape: BoxShape.circle),
-                child: const Icon(Icons.water_drop_outlined, color: Colors.white, size: 22),
-              ),
-              const SizedBox(height: 6),
-              const Text("Editar ciclo", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
-            ],
+          GestureDetector(
+            onTap: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => EditCycleScreen(initialData: _predictionData),
+                ),
+              );
+              
+              if (result != null) {
+                // Here we would call HomeService.saveCycle(result['last_period'], etc.)
+                // For now, we simulate a reload:
+                _loadPredictions();
+              }
+            },
+            child: Column(
+              children: [
+                Container(
+                  width: 45, height: 45,
+                  decoration: const BoxDecoration(color: Color(0xFFD4E2FF), shape: BoxShape.circle),
+                  child: const Icon(Icons.water_drop_outlined, color: Colors.white, size: 22),
+                ),
+                const SizedBox(height: 6),
+                const Text("Editar ciclo", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
+              ],
+            ),
           ),
         ],
       ),
