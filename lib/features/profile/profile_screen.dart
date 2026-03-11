@@ -57,13 +57,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFCCDDFF),
-              Color(0xFFEBD8F5),
+              Color(0xFFF0F5FF),
+              Color(0xFFFCF0F5),
             ],
           ),
         ),
@@ -102,62 +104,86 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const Text(
                       'General',
                       style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                         color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    _buildMenuItem(
-                      Icons.access_time, 
-                      "Historial de tus Ciclos",
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const CycleHistoryScreen()),
-                        );
-                      }
+                    const SizedBox(height: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildMenuItem(
+                            Icons.access_time, 
+                            "Historial de tus Ciclos",
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const CycleHistoryScreen()),
+                              );
+                            }
+                          ),
+                          Divider(height: 1, thickness: 1, color: Colors.grey[100], indent: 16, endIndent: 16),
+                          _buildMenuItem(
+                            Icons.calendar_today_outlined, 
+                            "Tu Calendario",
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const CalendarScreen()),
+                              );
+                            }
+                          ),
+                          Divider(height: 1, thickness: 1, color: Colors.grey[100], indent: 16, endIndent: 16),
+                          _buildMenuItem(Icons.swap_calls_outlined, "Emociones"),
+                        ],
+                      ),
                     ),
-                    _buildMenuItem(
-                      Icons.calendar_today_outlined, 
-                      "Tu Calendario",
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const CalendarScreen()),
-                        );
-                      }
-                    ),
-                    _buildMenuItem(Icons.swap_calls_outlined, "Emociones"),
                     
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 32),
                     
                     // Support Section
                     const Text(
-                      'Support',
+                      'Soporte',
                       style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                         color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    _buildMenuItem(Icons.analytics_outlined, "Analisis de sus Ciclos"),
-                    _buildMenuItem(
-                      Icons.lock_outline, 
-                      "Cambiar Contraseña",
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
-                        );
-                      }
-                    ),
-                    _buildMenuItem(
-                      Icons.logout, 
-                      "Salir", 
-                      isLogout: true,
-                      onTap: _handleLogout,
+                    const SizedBox(height: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildMenuItem(Icons.analytics_outlined, "Analisis de sus Ciclos"),
+                          Divider(height: 1, thickness: 1, color: Colors.grey[100], indent: 16, endIndent: 16),
+                          _buildMenuItem(
+                            Icons.lock_outline, 
+                            "Cambiar Contraseña",
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
+                              );
+                            }
+                          ),
+                          Divider(height: 1, thickness: 1, color: Colors.grey[100], indent: 16, endIndent: 16),
+                          _buildMenuItem(
+                            Icons.logout, 
+                            "Salir", 
+                            isLogout: true,
+                            onTap: _handleLogout,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -246,44 +272,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildMenuItem(IconData icon, String label, {bool isLogout = false, VoidCallback? onTap}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ListTile(
-        onTap: onTap,
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isLogout ? const Color(0xFFFFF0F3) : Colors.grey[50]!,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            icon, 
-            color: isLogout ? Colors.redAccent : Colors.black87, 
-            size: 20
-          ),
+    return ListTile(
+      onTap: onTap,
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isLogout ? const Color(0xFFFFF0F3) : Colors.transparent,
+          shape: BoxShape.circle,
         ),
-        title: Text(
-          label,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: isLogout ? Colors.redAccent : Colors.black87,
-          ),
+        child: Icon(
+          icon, 
+          color: isLogout ? Colors.redAccent : Colors.black87, 
+          size: 22
         ),
-        trailing: isLogout ? null : const Icon(Icons.chevron_right, color: Colors.black45),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       ),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
+          color: isLogout ? Colors.redAccent : Colors.black87,
+        ),
+      ),
+      trailing: isLogout ? null : const Icon(Icons.chevron_right, color: Colors.black45, size: 20),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 
