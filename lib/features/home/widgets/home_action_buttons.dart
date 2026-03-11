@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../edit_period_screen.dart';
-import '../add_symptoms_screen.dart';
+import '../symptoms/add_symptoms_screen.dart';
 
 class HomeActionButtons extends StatelessWidget {
   final VoidCallback onRefresh;

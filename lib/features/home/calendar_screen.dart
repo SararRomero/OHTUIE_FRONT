@@ -1,46 +1,16 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'home_service.dart';
-import 'daily_log_service.dart';
+import 'symptoms/daily_log_service.dart';
 import 'widgets/prediction_card.dart';
 import 'utils/cycle_utils.dart';
-import 'add_symptoms_screen.dart';
+import 'symptoms/add_symptoms_screen.dart';
 import 'widgets/calendar_header.dart';
 import 'widgets/calendar_month_selector.dart';
 import 'widgets/calendar_day_item.dart';
 import 'widgets/daily_log_summary.dart';
+import 'widgets/ovulation_flower_painter.dart';
 
-class OvulationFlowerPainter extends CustomPainter {
-  final Color color;
-  OvulationFlowerPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final petalRadius = size.width / 2.5; 
-    final centerOffset = size.width / 4;
-
-    // Draw 5 petals for a more "true floral" look
-    for (int i = 0; i < 5; i++) {
-      final angle = i * 2 * pi / 5 - pi / 2; // Start from top
-      final petalCenter = Offset(
-        center.dx + centerOffset * cos(angle),
-        center.dy + centerOffset * sin(angle),
-      );
-      canvas.drawCircle(petalCenter, petalRadius, paint);
-    }
-    
-    // Fill the middle completely with a slightly larger center
-    canvas.drawCircle(center, petalRadius * 1.4, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
 
 class CalendarScreen extends StatefulWidget {
   final Map<String, dynamic>? predictionData;
@@ -59,7 +29,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   bool _isLoadingLog = false;
 
   final Map<String, Map<String, String>> _moodOptions = {
-    'normal': {'label': 'Normal', 'imagePath': 'lib/assets/image/normal.png'},
+    'normal': {'label': 'Normal', 'imagePath': 'lib/assets/image/animo_normal.png'},
     'angry': {'label': 'Enojada', 'imagePath': 'lib/assets/image/enojada.png'},
     'happy': {'label': 'Feliz', 'imagePath': 'lib/assets/image/feliz.png'},
     'sad': {'label': 'Triste', 'imagePath': 'lib/assets/image/triste.png'},
@@ -121,7 +91,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     int avgCycle = _predictionData['avg_cycle_duration'] ?? 28;
     int periodDuration = _predictionData['period_duration'] ?? 5;
     
-    DateTime lastPeriodStart = DateTime.now();
+    DateTime lastPeriodStart = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
     if (_predictionData['next_period_start'] != null) {
       DateTime nextPeriod = DateTime.parse(_predictionData['next_period_start']);
       lastPeriodStart = nextPeriod.subtract(Duration(days: avgCycle));

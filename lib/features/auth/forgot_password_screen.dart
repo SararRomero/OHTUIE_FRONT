@@ -45,12 +45,45 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           context, 
           MaterialPageRoute(builder: (_) => OtpVerificationScreen(email: email))
         );
+      } else if (result['statusCode'] == 429) {
+        _showRateLimitDialog();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: ${result['message']}'), backgroundColor: Colors.red),
         );
       }
     }
+  }
+
+  void _showRateLimitDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        title: const Text(
+          'Agotado',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Color(0xFF90CAF9), fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Has agotado el límite de solicitudes de recuperación por hoy. Por favor, intenta de nuevo mañana.',
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          Center(
+            child: TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                backgroundColor: const Color(0xFF90CAF9),
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: const Text('OK', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

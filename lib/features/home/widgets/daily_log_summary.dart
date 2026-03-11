@@ -43,7 +43,7 @@ class DailyLogSummary extends StatelessWidget {
               separatorBuilder: (_, __) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
                 final moodId = moods[index];
-                final moodInfo = moodOptions[moodId] ?? {'label': moodId, 'imagePath': 'lib/assets/image/normal.png'};
+                final moodInfo = moodOptions[moodId] ?? {'label': moodId, 'imagePath': 'lib/assets/image/flujo_normal.png'};
                 return _buildChip(moodInfo['imagePath']!, moodInfo['label']!);
               },
             ),

@@ -72,10 +72,14 @@ class AuthService {
     try {
       final response = await ApiClient.post("/auth/password-recovery/$email", {});
       if (response.statusCode == 200) {
-        return {"success": true};
+        return {"success": true, "statusCode": response.statusCode};
       } else {
         final error = jsonDecode(response.body);
-        return {"success": false, "message": error['detail'] ?? "Error sending recovery code"};
+        return {
+          "success": false, 
+          "message": error['detail'] ?? "Error sending recovery code",
+          "statusCode": response.statusCode
+        };
       }
     } catch (e) {
       return {"success": false, "message": "Connection error: $e"};

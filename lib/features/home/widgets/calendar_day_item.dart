@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../calendar_screen.dart'; // To access the painter if needed or I can move it here
+import 'ovulation_flower_painter.dart';
 
 class CalendarDayItem extends StatelessWidget {
   final int day;

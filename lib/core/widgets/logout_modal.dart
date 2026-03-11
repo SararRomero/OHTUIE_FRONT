@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../features/auth/auth_service.dart';
+import '../../features/auth/login_screen.dart';
 
 class LogoutModal extends StatelessWidget {
   const LogoutModal({super.key});
@@ -74,7 +75,10 @@ class LogoutModal extends StatelessWidget {
                       onPressed: () async {
                         await AuthService.logout();
                         if (context.mounted) {
-                          Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (_) => const LoginScreen()),
+                            (route) => false,
+                          );
                         }
                       },
                       style: TextButton.styleFrom(
