@@ -3,6 +3,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/network/api_client.dart';
 
 class AuthService {
+  static SharedPreferences? _prefs;
+
+  static Future<SharedPreferences> _getPrefs() async {
+    _prefs ??= await SharedPreferences.getInstance();
+    return _prefs!;
+  }
   static Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await ApiClient.postForm("/login/access-token", {
@@ -13,19 +19,11 @@ class AuthService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final token = data['access_token'];
+        final role = data['role'] ?? "user";
         
-        // Save token
-        final prefs = await SharedPreferences.getInstance();
+        final prefs = await _getPrefs();
         await prefs.setString('auth_token', token);
-        
-        // Fetch user profile to get role
-        final profileResponse = await ApiClient.get("/users/me", token: token);
-        String role = "user";
-        if (profileResponse.statusCode == 200) {
-          final profileData = jsonDecode(profileResponse.body);
-          role = profileData['role'] ?? "user";
-          await prefs.setString('user_role', role);
-        }
+        await prefs.setString('user_role', role);
         
         return {"success": true, "token": token, "role": role};
       } else {
@@ -74,10 +72,14 @@ class AuthService {
     try {
       final response = await ApiClient.post("/auth/password-recovery/$email", {});
       if (response.statusCode == 200) {
-        return {"success": true};
+        return {"success": true, "statusCode": response.statusCode};
       } else {
         final error = jsonDecode(response.body);
-        return {"success": false, "message": error['detail'] ?? "Error sending recovery code"};
+        return {
+          "success": false, 
+          "message": error['detail'] ?? "Error sending recovery code",
+          "statusCode": response.statusCode
+        };
       }
     } catch (e) {
       return {"success": false, "message": "Connection error: $e"};
@@ -107,12 +109,12 @@ class AuthService {
   }
 
   static Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.remove('auth_token');
   }
 
   static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     return prefs.getString('auth_token');
   }
 }

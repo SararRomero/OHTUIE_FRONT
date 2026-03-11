@@ -69,8 +69,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
+              Color(0xFFFFF8F9),
               Color(0xFFFFE5E9),
-              Color(0xFFEBD8F5),
             ],
           ),
         ),
@@ -189,13 +189,14 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _handleVerifyCode,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6A9EFF), 
+                            backgroundColor: const Color(0xFFFFCCE5), 
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                            elevation: 0,
                           ),
                           child: _isLoading 
                             ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Verify', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            : const Text('Verificar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],

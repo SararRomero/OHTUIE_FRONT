@@ -6,108 +6,136 @@ class TermsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Close Button
-            Positioned(
-              top: 20,
-              left: 20,
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFFFF8F9), Color(0xFFFFE5E9)],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildCircularBackButton(context),
+              Expanded(
                 child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.1),
-                    shape: BoxShape.circle,
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(40),
+                      topRight: Radius.circular(40),
+                    ),
                   ),
-                  child: const Icon(Icons.close, color: Colors.black, size: 24),
-                ),
-              ),
-            ),
-            
-            // Content
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 80),
-                    
-                    // Header Row with Title and Image
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Terminos y\nCondiciones',
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                  height: 1.2,
-                                ),
+                        // Header Row with Title and Image
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Terminos y\nCondiciones',
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '11/02/2026',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[400],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '11/02/2026',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[400],
-                                ),
+                            ),
+                            Image.asset(
+                              'lib/assets/image/terminos.png',
+                              width: 100,
+                              height: 100,
+                              errorBuilder: (context, error, stackTrace) => const Icon(
+                                Icons.article_outlined,
+                                size: 80,
+                                color: Color(0xFFFFCCE5),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        Image.asset(
-                          'lib/assets/image/terminos.png',
-                          width: 100,
-                          height: 100,
-                          errorBuilder: (context, error, stackTrace) => const Icon(
-                            Icons.article_outlined,
-                            size: 80,
-                            color: Color(0xFFFFB7C5),
-                          ),
+                        
+                        const SizedBox(height: 40),
+                        
+                        // Terms Sections
+                        _buildTermSection(
+                          icon: Icons.help_outline,
+                          title: 'Aceptación de los Términos',
+                          description: 'Si no está de acuerdo con alguno de los términos aquí establecidos, deberá abstenerse de utilizar la aplicación.',
                         ),
+                        _buildTermSection(
+                          icon: Icons.favorite_border,
+                          title: 'Descripción del Servicio',
+                          description: 'La aplicación tiene fines informativos y de apoyo personal.',
+                        ),
+                        _buildTermSection(
+                          icon: Icons.list_alt,
+                          title: 'Naturaleza Informativa del Servicio',
+                          description: 'Se recomienda acudir a un profesional de la salud ante cualquier duda médica.',
+                        ),
+                        _buildTermSection(
+                          icon: Icons.edit_outlined,
+                          title: 'Registro y Cuenta de Usuario',
+                          description: 'La usuaria podrá solicitar la eliminación de su cuenta en cualquier momento.',
+                        ),
+                        
+                        const SizedBox(height: 40),
                       ],
                     ),
-                    
-                    const SizedBox(height: 40),
-                    
-                    // Terms Sections
-                    _buildTermSection(
-                      icon: Icons.help_outline,
-                      title: 'Aceptación de los Términos',
-                      description: 'Si no está de acuerdo con alguno de los términos aquí establecidos, deberá abstenerse de utilizar la aplicación.',
-                    ),
-                    _buildTermSection(
-                      icon: Icons.favorite_border,
-                      title: 'Descripción del Servicio',
-                      description: 'La aplicación tiene fines informativos y de apoyo personal.',
-                    ),
-                    _buildTermSection(
-                      icon: Icons.list_alt,
-                      title: 'Naturaleza Informativa del Servicio',
-                      description: 'Se recomienda acudir a un profesional de la salud ante cualquier duda médica.',
-                    ),
-                    _buildTermSection(
-                      icon: Icons.edit_outlined,
-                      title: 'Registro y Cuenta de Usuario',
-                      description: 'La usuaria podrá solicitar la eliminación de su cuenta en cualquier momento.',
-                    ),
-                    
-                    const SizedBox(height: 40),
-                  ],
+                  ),
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCircularBackButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-          ],
+            child: const Icon(Icons.close, size: 20, color: Colors.black),
+          ),
         ),
       ),
     );

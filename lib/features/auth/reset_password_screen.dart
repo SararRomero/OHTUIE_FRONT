@@ -30,6 +30,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
 
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('La contraseña debe tener al menos 6 caracteres')),
+      );
+      return;
+    }
+
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Las contraseñas no coinciden')),
@@ -80,8 +87,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
+              Color(0xFFFFF8F9),
               Color(0xFFFFE5E9),
-              Color(0xFFEBD8F5),
             ],
           ),
         ),
@@ -155,13 +162,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
+                        maxLength: 20,
                         decoration: InputDecoration(
+                          hintText: 'Mínimo 6 caracteres',
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
                             icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
                             onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                           ),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
+                          counterText: "",
+                          helperText: 'Mínimo 6 y máximo 20 caracteres',
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -171,6 +182,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       TextFormField(
                         controller: _confirmPasswordController,
                         obscureText: _obscureConfirmPassword,
+                        maxLength: 20,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
@@ -178,6 +190,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                           ),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
+                          counterText: "",
                         ),
                       ),
                       
@@ -193,10 +206,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             backgroundColor: const Color(0xFFFFCCE5), 
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                            elevation: 0,
                           ),
                           child: _isLoading 
                             ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Save', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            : const Text('Guardar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
