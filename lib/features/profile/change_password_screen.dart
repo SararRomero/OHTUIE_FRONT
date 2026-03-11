@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'user_service.dart';
+import '../auth/forgot_password_screen.dart';
 
 enum PasswordState { none, validating, correct, incorrect }
 
@@ -114,9 +115,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  // Redirect to forgot password screen (if you have one)
-                  // For now, let's assume it exists in the same auth folder
-                  // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                  );
                 },
                 child: const Text('Recuperar'),
               ),
