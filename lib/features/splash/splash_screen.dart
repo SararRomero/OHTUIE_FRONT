@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../auth/sign_up_screen.dart';
 import '../auth/auth_service.dart';
-import '../home/calendar_screen.dart';
+import '../home/user_home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -39,14 +39,16 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       final token = await AuthService.getToken();
       if (mounted) {
         if (token != null && token.isNotEmpty) {
-          // If token exists, go to Home (Calendar)
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const CalendarScreen()),
+          // If token exists, go to Home (Calendar) and clear history
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const UserHomeScreen()),
+            (route) => false,
           );
         } else {
-          // Otherwise go to Sign Up/Landing
-          Navigator.of(context).pushReplacement(
+          // Otherwise go to Sign Up/Landing and clear history
+          Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const SignUpScreen()),
+            (route) => false,
           );
         }
       }
