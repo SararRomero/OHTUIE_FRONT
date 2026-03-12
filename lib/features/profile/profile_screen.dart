@@ -8,6 +8,7 @@ import '../home/calendar_screen.dart';
 import '../../core/widgets/logout_modal.dart';
 import '../../core/widgets/session_expired_modal.dart';
 import 'cycle_history_screen.dart';
+import '../emotions/emotions_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Map<String, dynamic>? initialUserData;
@@ -165,7 +166,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             }
                           ),
                           Divider(height: 1, thickness: 1, color: Colors.grey[100], indent: 16, endIndent: 16),
-                          _buildMenuItem(Icons.swap_calls_outlined, "Emociones"),
+                          _buildMenuItem(
+                            Icons.swap_calls_outlined, 
+                            "Emociones",
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const EmotionsScreen()),
+                              );
+                            }
+                          ),
                           Divider(height: 1, thickness: 1, color: Colors.grey[100], indent: 16, endIndent: 16),
                           _buildMenuItem(Icons.analytics_outlined, "Analisis de sus Ciclos"),
                         ],
