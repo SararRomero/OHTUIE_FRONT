@@ -166,6 +166,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           Divider(height: 1, thickness: 1, color: Colors.grey[100], indent: 16, endIndent: 16),
                           _buildMenuItem(Icons.swap_calls_outlined, "Emociones"),
+                          Divider(height: 1, thickness: 1, color: Colors.grey[100], indent: 16, endIndent: 16),
+                          _buildMenuItem(Icons.analytics_outlined, "Analisis de sus Ciclos"),
                         ],
                       ),
                     ),
@@ -189,8 +191,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       child: Column(
                         children: [
-                          _buildMenuItem(Icons.analytics_outlined, "Analisis de sus Ciclos"),
-                          Divider(height: 1, thickness: 1, color: Colors.grey[100], indent: 16, endIndent: 16),
                           _buildMenuItem(
                             Icons.lock_outline, 
                             "Cambiar Contraseña",
