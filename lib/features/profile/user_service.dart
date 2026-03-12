@@ -25,6 +25,9 @@ class UserService {
     String? fullName,
     String? email,
     String? password,
+    int? cycleDuration,
+    int? periodDuration,
+    String? lastPeriodDate,
   }) async {
     try {
       final token = await AuthService.getToken();
@@ -34,6 +37,9 @@ class UserService {
       if (fullName != null) body["full_name"] = fullName;
       if (email != null) body["email"] = email;
       if (password != null) body["password"] = password;
+      if (cycleDuration != null) body["cycle_duration"] = cycleDuration;
+      if (periodDuration != null) body["period_duration"] = periodDuration;
+      if (lastPeriodDate != null) body["last_period_date"] = lastPeriodDate;
 
       final response = await ApiClient.putDirect("/users/me", body, token: token);
       

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
+import '../profile/user_service.dart';
 
 class EditCycleScreen extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -14,6 +15,7 @@ class EditCycleScreen extends StatefulWidget {
 class _EditCycleScreenState extends State<EditCycleScreen> with SingleTickerProviderStateMixin {
   // 0 = ninguna, 1 = último periodo, 2 = duración del periodo, 3 = duración del ciclo
   int _expandedSection = 0;
+  bool _isSaving = false;
 
   DateTime _lastPeriodDate = DateTime.now();
   int _periodDuration = 5;
@@ -23,11 +25,13 @@ class _EditCycleScreenState extends State<EditCycleScreen> with SingleTickerProv
   void initState() {
     super.initState();
     if (widget.initialData != null) {
-      if (widget.initialData!['last_period'] != null) {
+      if (widget.initialData!['last_period_start'] != null) {
+        _lastPeriodDate = DateTime.parse(widget.initialData!['last_period_start']);
+      } else if (widget.initialData!['last_period'] != null) {
         _lastPeriodDate = DateTime.parse(widget.initialData!['last_period']);
       }
       _periodDuration = widget.initialData!['period_duration'] ?? 5;
-      _cycleDuration = widget.initialData!['cycle_duration'] ?? 28;
+      _cycleDuration = widget.initialData!['avg_cycle_duration'] ?? widget.initialData!['cycle_duration'] ?? 28;
     }
   }
 
@@ -58,23 +62,34 @@ class _EditCycleScreenState extends State<EditCycleScreen> with SingleTickerProv
             children: [
               _buildHeader(),
               Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
-                  child: Column(
-                    children: [
-                      _buildInfoSection(),
-                      const SizedBox(height: 24),
-                      _buildLastPeriodSection(),
-                      const SizedBox(height: 16),
-                      _buildPeriodDurationSection(),
-                      const SizedBox(height: 16),
-                      _buildCycleDurationSection(),
-                      const SizedBox(height: 50),
-                      _buildSaveButton(),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
+                child: Stack(
+                  children: [
+                    SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
+                      child: Column(
+                        children: [
+                          _buildInfoSection(),
+                          const SizedBox(height: 24),
+                          _buildLastPeriodSection(),
+                          const SizedBox(height: 16),
+                          _buildPeriodDurationSection(),
+                          const SizedBox(height: 16),
+                          _buildCycleDurationSection(),
+                          const SizedBox(height: 50),
+                          _buildSaveButton(),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                    if (_isSaving)
+                      Container(
+                        color: Colors.white.withOpacity(0.5),
+                        child: const Center(
+                          child: CircularProgressIndicator(color: Color(0xFFFF4081)),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ],
@@ -457,12 +472,28 @@ class _EditCycleScreenState extends State<EditCycleScreen> with SingleTickerProv
         ],
       ),
       child: ElevatedButton(
-        onPressed: () {
-          Navigator.pop(context, {
-            'last_period': _lastPeriodDate.toIso8601String(),
-            'period_duration': _periodDuration,
-            'cycle_duration': _cycleDuration,
-          });
+        onPressed: _isSaving ? null : () async {
+          setState(() => _isSaving = true);
+          
+          final result = await UserService.updateUserMe(
+            cycleDuration: _cycleDuration,
+            periodDuration: _periodDuration,
+            lastPeriodDate: _lastPeriodDate.toIso8601String().split('T')[0],
+          );
+
+          if (mounted) {
+            setState(() => _isSaving = false);
+            if (result['success']) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Configuración de ciclo actualizada")),
+              );
+              Navigator.pop(context, true);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(result['message'])),
+              );
+            }
+          }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,

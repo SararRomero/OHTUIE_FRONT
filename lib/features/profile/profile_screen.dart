@@ -33,7 +33,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUserProfile() async {
-    setState(() => _isLoading = true);
+    // Only show the blocking central spinner if we don't have any data yet
+    if (_name.isEmpty) {
+      setState(() => _isLoading = true);
+    }
+    
     final result = await UserService.getUserMe();
     if (mounted) {
       if (result['success']) {
@@ -44,9 +48,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       } else {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${result['message']}')),
-        );
+        
+        // If it's a credential error, we might want to log out
+        final message = result['message'].toString().toLowerCase();
+        if (message.contains("credentials") || message.contains("unauthorized") || message.contains("401")) {
+             // Handle session expiration - could potentially auto-logout here
+             // For now, just show a more helpful message
+             ScaffoldMessenger.of(context).showSnackBar(
+               const SnackBar(content: Text('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.')),
+             );
+        } else if (_name.isEmpty) {
+          // Only show generic error if we actually don't have data to show
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${result['message']}')),
+          );
+        }
       }
     }
   }
