@@ -5,6 +5,7 @@ import '../profile/user_service.dart';
 import 'widgets/cycle_progress_indicator.dart';
 import 'widgets/home_action_buttons.dart';
 import 'widgets/prediction_card.dart';
+import '../../core/widgets/session_expired_modal.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -38,12 +39,30 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
   Future<void> _loadUserProfile() async {
     final result = await UserService.getUserMe();
-    if (mounted && result['success']) {
-      setState(() {
-        _userProfileData = result['data'];
-        final fullName = _userProfileData!['full_name'] ?? "Usuario";
-        _userName = fullName.split(' ')[0]; // Get only first name
-      });
+    if (mounted) {
+      if (result['success']) {
+        setState(() {
+          _userProfileData = result['data'];
+          final fullName = _userProfileData!['full_name'] ?? "Usuario";
+          _userName = fullName.split(' ')[0]; // Get only first name
+        });
+      } else {
+        final message = result['message'].toString().toLowerCase();
+        if (message.contains("credentials") || message.contains("unauthorized") || message.contains("401")) {
+          _showSessionExpired();
+        }
+      }
+    }
+  }
+
+  void _showSessionExpired() {
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.black.withOpacity(0.3),
+        builder: (context) => const SessionExpiredModal(),
+      );
     }
   }
 
@@ -62,6 +81,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         });
       } else {
         setState(() => _isLoading = false);
+        final message = result['message'].toString().toLowerCase();
+        if (message.contains("credentials") || message.contains("unauthorized") || message.contains("401")) {
+          _showSessionExpired();
+        }
       }
     }
   }

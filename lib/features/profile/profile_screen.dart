@@ -6,6 +6,7 @@ import 'edit_profile_screen.dart';
 import 'change_password_screen.dart';
 import '../home/calendar_screen.dart';
 import '../../core/widgets/logout_modal.dart';
+import '../../core/widgets/session_expired_modal.dart';
 import 'cycle_history_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -49,14 +50,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       } else {
         setState(() => _isLoading = false);
         
-        // If it's a credential error, we might want to log out
+        // If it's a credential error, show the expired modal
         final message = result['message'].toString().toLowerCase();
         if (message.contains("credentials") || message.contains("unauthorized") || message.contains("401")) {
-             // Handle session expiration - could potentially auto-logout here
-             // For now, just show a more helpful message
-             ScaffoldMessenger.of(context).showSnackBar(
-               const SnackBar(content: Text('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.')),
-             );
+             if (mounted) {
+               showDialog(
+                 context: context,
+                 barrierDismissible: false,
+                 barrierColor: Colors.black.withOpacity(0.3),
+                 builder: (context) => const SessionExpiredModal(),
+               );
+             }
         } else if (_name.isEmpty) {
           // Only show generic error if we actually don't have data to show
           ScaffoldMessenger.of(context).showSnackBar(
