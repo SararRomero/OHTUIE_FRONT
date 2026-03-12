@@ -46,52 +46,76 @@ class CycleProgressPainter extends CustomPainter {
     // Progress track
     if (progress > 0) {
       final sweepAngle = 2 * math.pi * progress;
-      
-      // Clean Single-Color Diffuse Gradient (Trail)
-      // This creates a soft glow that follows the handle
+
+      // Petal Rainbow Palette
+      const Color colorMenstruation = Color(0xFFFFB5E1); 
+      const Color colorFollicular = Color(0xFFE8F5E9);    
+      const Color colorFertileWindow = Color(0xFFC5EBAA); 
+      const Color colorOvulation = Color(0xFFFFD1A9);    
+      const Color colorLuteal = Color(0xFFD2BDFF);       
+
+      // Calculate base stops for phase boundaries
+      final fStart = ((fertileDay - 1) / avgCycle).clamp(0.05, 0.95);
+      final oStart = ((ovulationDay - 1) / avgCycle).clamp(0.05, 0.95);
+      final lStart = (ovulationDay / avgCycle).clamp(0.05, 0.95);
+
+      // Define "difuminado" spread (approx 1.5 - 2 days for smooth blend)
+      const double spread = 0.025;
+
+      // Construct Smooth Historical Gradient
+      final List<Color> gradientColors = [
+        colorMenstruation,   // 0.0: Solid Coral
+        colorMenstruation,   // End of solid Period
+        colorFertileWindow,  // Start of solid Fertile
+        colorFertileWindow,  // End of solid Fertile
+        colorOvulation,      // Start of solid Ovulation
+        colorOvulation,      // End of solid Ovulation
+        colorLuteal,         // Start of solid Luteal
+        colorLuteal,         // End of solid Luteal
+        colorMenstruation,   // Wrap-around transition back to initial Pink/Coral
+      ];
+
+      final List<double> stops = [
+        0.0,
+        (fStart - spread).clamp(0.0, 1.0),
+        (fStart + spread).clamp(0.0, 1.0),
+        (oStart - spread).clamp(0.0, 1.0),
+        (oStart + spread).clamp(0.0, 1.0),
+        (lStart - spread).clamp(0.0, 1.0),
+        (lStart + spread).clamp(0.0, 1.0),
+        (1.0 - (spread * 2)).clamp(0.0, 1.0), // Start blend back to Coral at the end
+        1.0,                                  // Final 1.0 matches 0.0 (Coral)
+      ];
+
       final Gradient gradient = SweepGradient(
-        startAngle: 0,
-        endAngle: 2 * math.pi,
-        colors: [
-          color.withOpacity(0.0),
-          color.withOpacity(0.2), // Very faint tail
-          color.withOpacity(0.6), // Growing intensity
-          color,                  // Vibrant head
-          color.withOpacity(0.0), 
-        ],
-        stops: [
-          0.0,
-          progress * 0.4, 
-          progress * 0.8,
-          progress,       
-          progress + 0.001,
-        ],
+        colors: gradientColors,
+        stops: stops,
         transform: const GradientRotation(-math.pi / 2),
       );
 
-      // DIFFUSE GLOW LAYER
-      final Paint glowPaint = Paint()
+      // SOLID PROGRESS LAYER (No luminiscent blur)
+      // We use a high stroke width but no MaskFilter for a defined "solid" edge
+      final Paint progressPaint = Paint()
         ..shader = gradient.createShader(Rect.fromCircle(center: center, radius: radius))
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10); // Contained soft blur
+        ..strokeCap = StrokeCap.round;
 
+      // Draw the arc
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         -math.pi / 2,
         sweepAngle,
         false,
-        glowPaint,
+        progressPaint,
       );
 
-      // SEMI-SOLID CORE LAYER (for definition)
+      // INNER CORE FOR REINFORCEMENT (Ensures solid center of the stroke)
       final Paint corePaint = Paint()
         ..shader = gradient.createShader(Rect.fromCircle(center: center, radius: radius))
         ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth * 0.6
-        ..strokeCap = StrokeCap.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+        ..strokeWidth = strokeWidth * 0.9
+        ..strokeCap = StrokeCap.round;
 
        canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
@@ -139,9 +163,9 @@ class CycleProgressPainter extends CustomPainter {
       );
     }
 
-    drawMarker(1, const Color(0xFFEBD8F5), "period"); // Purple (matches card)
-    drawMarker(fertileDay, const Color(0xFFD4E2FF), "fertile"); // Aqua (matches card)
-    drawMarker(ovulationDay, const Color(0xFFFFE5E9), "ovulation"); // Pink (matches card)
+    drawMarker(1, const Color(0xFFFFB5E1), "period"); // Coral
+    drawMarker(fertileDay, const Color(0xFFC5EBAA), "fertile"); // Mint Green
+    drawMarker(ovulationDay, const Color(0xFFFFD1A9), "ovulation"); // Peach
 
     // Handle
     final angle = -math.pi / 2 + (2 * math.pi * progress);

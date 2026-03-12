@@ -8,12 +8,12 @@ class CycleUtils {
     required int fertileDay,
     required int ovulationDay,
   }) {
-    // User's Verified Card Palette
-    const Color colorMenstruation = Color(0xFFEBD8F5); // Purple (matching card)
-    const Color colorFollicular = Color(0xFFE8F5E9);   // Soft Green
-    const Color colorFertileWindow = Color(0xFFD4E2FF); // Aqua Blue (matching card)
-    const Color colorOvulation = Color(0xFFFFE5E9);    // Soft Pink (matching card)
-    const Color colorLuteal = Color(0xFFFFF3E0);      // Soft Peach
+    // Petal Rainbow Palette (Vibrant & Unique)
+    const Color colorMenstruation = Color(0xFFFFB5E1); // Coral / Intense Pink
+    const Color colorFollicular = Color(0xFFE8F5E9);    // Soft Mint
+    const Color colorFertileWindow = Color(0xFFC5EBAA); // Fresh Spring Green
+    const Color colorOvulation = Color(0xFFFFD1A9);    // Peach Orange
+    const Color colorLuteal = Color(0xFFD2BDFF);       // Luteal Purple
 
     String currentPhaseText = "";
     Color phaseColor = colorFollicular;
@@ -55,12 +55,8 @@ class CycleUtils {
       nextStageColor = colorMenstruation;
     }
 
-    // Color Interpolation Logic
-    // Start transitioning 3 days before the next event
-    if (!isToday && daysToNext <= 3 && daysToNext > 0) {
-      double t = (4 - daysToNext) / 4.0; 
-      phaseColor = Color.lerp(phaseColor, nextStageColor, t) ?? phaseColor;
-    }
+    // Color Interpolation Logic (REMOVED for solid segments)
+    // The painter's gradient handles the fixed color segments exactly at the markers.
 
     return {
       'currentPhaseText': currentPhaseText,
