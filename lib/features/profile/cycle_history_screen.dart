@@ -532,10 +532,10 @@ class _InteractiveSummaryCardState extends State<_InteractiveSummaryCard> {
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: widget.shadowColor.withOpacity(_isPressed ? 0.2 : 0.5),
-                blurRadius: _isPressed ? 8 : 20,
-                spreadRadius: _isPressed ? 1 : 4,
-                offset: Offset(0, _isPressed ? 4 : 8),
+                color: Colors.black.withOpacity(_isPressed ? 0.01 : 0.03),
+                blurRadius: _isPressed ? 5 : 15,
+                spreadRadius: 0,
+                offset: Offset(0, _isPressed ? 2 : 6),
               ),
             ],
           ),
