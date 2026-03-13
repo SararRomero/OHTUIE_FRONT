@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 
 class EmotionsScreen extends StatefulWidget {
   const EmotionsScreen({super.key});
@@ -10,11 +11,24 @@ class EmotionsScreen extends StatefulWidget {
 class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProviderStateMixin {
   bool _isWeekly = true;
   int _selectedIndex = -1;
+  int _currentMonthIndex = 2; // Default to March (0-indexed 2)
   late AnimationController _chartController;
   late Animation<double> _chartAnimation;
 
+  final List<String> _monthNames = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
+
+  final List<Color> _monthColors = [
+    const Color(0xFFBDD4FF), // Blue
+    const Color(0xFFEBD8F5), // Purple
+    const Color(0xFFFFCCDC), // Pink
+    const Color(0xFFC3F0E3), // Mint
+  ];
+
   final List<double> _weeklyData = [0.4, 0.6, 0.5, 0.9, 0.7, 0.3, 0.2];
-  final List<double> _monthlyData = [0.5, 0.7, 0.4, 0.8, 0.6, 0.9, 0.7, 0.5];
+  final List<double> _monthlyData = [0.5, 0.8, 0.4, 0.7]; // Only 4 weeks
 
   // Mocked symptoms for each data point
   final Map<int, List<String>> _weeklySymptoms = {
@@ -27,6 +41,13 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
     6: ["normal"],
   };
 
+  final Map<int, List<String>> _monthlySymptoms = {
+    0: ["fatigue", "bloating"],
+    1: ["cramps", "fatigue"],
+    2: ["normal"],
+    3: ["aching_head", "fatigue"],
+  };
+
   final Map<String, Map<String, String>> _symptomLibrary = {
     "aching_head": {
       "msg": "Mi niña, lamento que hoy tu cabecita te moleste. Eres fuerte y esto también pasará.",
@@ -34,6 +55,7 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
       "tip": "Evita las pantallas y bebe mucha agua; la hidratación es clave para aliviar la presión.",
       "label": "Dolor de cabeza"
     },
+    // ... rest same ...
     "add_weight": {
       "msg": "Hermosa, tu cuerpo es perfecto tal como es. Estas variaciones son normales y no definen tu luz.",
       "advice": "No seas dura contigo misma, abrázate hoy con mucha compasión.",
@@ -70,7 +92,7 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
   void initState() {
     super.initState();
     _chartController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
     _chartAnimation = CurvedAnimation(
@@ -97,6 +119,21 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
     }
   }
 
+  void _changeMonth(int delta) {
+    setState(() {
+      _currentMonthIndex = (_currentMonthIndex + delta) % 12;
+      if (_currentMonthIndex < 0) _currentMonthIndex = 11;
+      _selectedIndex = -1;
+    });
+    _chartController.reset();
+    _chartController.forward();
+  }
+
+  Color _getPrimaryColor() {
+    if (_isWeekly) return const Color(0xFFBDD4FF);
+    return _monthColors[_currentMonthIndex % _monthColors.length];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -116,16 +153,19 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
               _buildHeader(),
               Expanded(
                 child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center, // Better balance
                     children: [
                       _buildSelector(),
                       const SizedBox(height: 30),
                       _buildDateRange(),
                       const SizedBox(height: 30),
                       _buildChartContainer(),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 30), // Maintain clear distance
+                      _buildPredominantEmotionCard(),
+                      const SizedBox(height: 30),
                       _buildDailyAdviceCard(),
                       const SizedBox(height: 30),
                       _buildAdviceCard(),
@@ -139,6 +179,53 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPredominantEmotionCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 20,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFFBFC),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: Color(0xFFFDE8E8), blurRadius: 10)
+              ]
+            ),
+            child: const Icon(Icons.favorite, color: Color(0xFFFF5252), size: 24),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Sentimiento predominante",
+                style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+              ),
+              const Text(
+                "Tranquilidad y Calma",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -204,12 +291,13 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
   }
 
   Widget _buildSelectorButton(String text, bool active, VoidCallback onTap) {
+    final activeColor = _getPrimaryColor();
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: active ? (_isWeekly ? const Color(0xFFBDD4FF) : const Color(0xFFEBD8F5)) : Colors.transparent,
+          color: active ? activeColor : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(
@@ -230,8 +318,11 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.chevron_left, color: Colors.grey[400]),
-        const SizedBox(width: 15),
+        IconButton(
+          onPressed: () => _isWeekly ? null : _changeMonth(-1),
+          icon: Icon(Icons.chevron_left, color: Colors.grey[400]),
+        ),
+        const SizedBox(width: 5),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           decoration: BoxDecoration(
@@ -245,146 +336,206 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
             ],
           ),
           child: Text(
-            _isWeekly ? "10 de Mar - 16 de Mar, 2026" : "Marzo, 2026",
+            _isWeekly ? "10 de Mar - 16 de Mar, 2026" : "${_monthNames[_currentMonthIndex]}, 2026",
             style: const TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
               color: Colors.black87,
             ),
           ),
         ),
-        const SizedBox(width: 15),
-        Icon(Icons.chevron_right, color: Colors.grey[400]),
+        const SizedBox(width: 5),
+        IconButton(
+          onPressed: () => _isWeekly ? null : _changeMonth(1),
+          icon: Icon(Icons.chevron_right, color: Colors.grey[400]),
+        ),
       ],
     );
   }
 
   Widget _buildChartContainer() {
-    final data = _isWeekly ? _weeklyData : _monthlyData;
-    final primaryColor = _isWeekly ? const Color(0xFFBDD4FF) : const Color(0xFFEBD8F5);
-    final secondaryColor = _isWeekly ? const Color(0xFFE0E9FF) : const Color(0xFFF5EAFC);
+    final primaryColor = _getPrimaryColor();
 
     return Container(
-      height: 300,
+      constraints: const BoxConstraints(minHeight: 320),
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: AnimatedBuilder(
-              animation: _chartAnimation,
-              builder: (context, child) {
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: data.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final value = entry.value;
-                    final isSelected = _selectedIndex == index;
-                    
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedIndex = isSelected ? -1 : index;
-                        });
-                      },
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          if (isSelected)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: primaryColor,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                "${(value * 100).toInt()}%",
-                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          const SizedBox(height: 4),
-                          Container(
-                            width: 28,
-                            height: 160 * value * _chartAnimation.value,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.bottomCenter,
-                                end: Alignment.topCenter,
-                                colors: isSelected 
-                                  ? [primaryColor, secondaryColor]
-                                  : [primaryColor.withOpacity(0.1), primaryColor.withOpacity(0.3)],
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: isSelected ? [
-                                BoxShadow(
-                                  color: primaryColor.withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                )
-                              ] : [],
-                            ),
-                            child: isSelected ? Center(
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            ) : null,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _isWeekly ? ["L", "M", "Mi", "J", "V", "S", "D"][index] : "S${index + 1}",
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: isSelected ? primaryColor : Colors.grey[400],
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
+          SizedBox(
+            height: 180,
+            child: _isWeekly ? _buildBarChart() : _buildLineChart(),
           ),
+          const SizedBox(height: 20),
           if (_selectedIndex != -1)
-            Padding(
-              padding: const EdgeInsets.only(top: 16.0),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Column(
                 children: [
                   Text(
                     _isWeekly 
                       ? "Intensidad el ${_getDayName(_selectedIndex)}: ${(_weeklyData[_selectedIndex] * 100).toInt()}%"
                       : "Intensidad Semana ${_selectedIndex + 1}: ${(_monthlyData[_selectedIndex] * 100).toInt()}%",
-                    style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 13),
+                    style: TextStyle(color: primaryColor.withOpacity(0.8), fontWeight: FontWeight.bold, fontSize: 13),
                   ),
-                  const SizedBox(height: 4),
-                  if (_isWeekly && _weeklySymptoms.containsKey(_selectedIndex))
-                    Text(
-                      "Síntomas registrados: ${_weeklySymptoms[_selectedIndex]!.map((id) => _symptomLibrary[id]?['label'] ?? id).join(', ')}",
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                    ),
+                  const SizedBox(height: 6),
+                  Builder(builder: (context) {
+                    final index = _selectedIndex;
+                    final symptoms = _isWeekly ? _weeklySymptoms[index] : _monthlySymptoms[index];
+                    if (symptoms != null) {
+                      return Text(
+                        "Síntomas: ${symptoms.map((id) => _symptomLibrary[id]?['label'] ?? id).join(', ')}",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12, fontWeight: FontWeight.w500),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }),
                 ],
               ),
+            )
+          else
+            Text(
+              _isWeekly ? "Toca una barra para ver detalles" : "Toca un punto para ver detalles",
+              style: TextStyle(color: Colors.grey[400], fontSize: 12, fontStyle: FontStyle.italic),
             ),
         ],
       ),
+    );
+  }
+
+  Widget _buildBarChart() {
+    final primaryColor = _getPrimaryColor();
+
+    return AnimatedBuilder(
+      animation: _chartAnimation,
+      builder: (context, child) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: _weeklyData.asMap().entries.map((entry) {
+            final index = entry.key;
+            final value = entry.value;
+            final isSelected = _selectedIndex == index;
+            
+            return GestureDetector(
+              onTap: () => setState(() => _selectedIndex = isSelected ? -1 : index),
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Container(
+                    width: 32,
+                    height: 160 * value * _chartAnimation.value,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: isSelected 
+                          ? [primaryColor, primaryColor.withOpacity(0.7)]
+                          : [primaryColor.withOpacity(0.1), primaryColor.withOpacity(0.25)],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: isSelected ? [
+                        BoxShadow(
+                          color: primaryColor.withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        )
+                      ] : [],
+                    ),
+                    child: isSelected ? Center(
+                      child: Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                      ),
+                    ) : null,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    ["L", "M", "Mi", "J", "V", "S", "D"][index],
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isSelected ? primaryColor : Colors.grey[400],
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildLineChart() {
+    final primaryColor = _getPrimaryColor();
+
+    return Column(
+      children: [
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Stack(
+                children: [
+                  CustomPaint(
+                    size: Size(constraints.maxWidth, constraints.maxHeight),
+                    painter: LineChartPainter(
+                      data: _monthlyData,
+                      animationValue: _chartAnimation.value,
+                      primaryColor: primaryColor,
+                      selectedIndex: _selectedIndex,
+                    ),
+                  ),
+                  Row(
+                    children: List.generate(4, (index) {
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _selectedIndex = _selectedIndex == index ? -1 : index),
+                          behavior: HitTestBehavior.opaque,
+                          child: const SizedBox.expand(),
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(4, (index) {
+            return Text(
+              "Sem ${index + 1}",
+              style: TextStyle(
+                fontSize: 12,
+                color: _selectedIndex == index ? primaryColor : Colors.grey[400],
+                fontWeight: _selectedIndex == index ? FontWeight.bold : FontWeight.w500,
+              ),
+            );
+          }),
+        ),
+      ],
     );
   }
 
@@ -394,13 +545,14 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
 
   Widget _buildDailyAdviceCard() {
     String symptomId = "normal";
-    if (_selectedIndex != -1 && _isWeekly && _weeklySymptoms.containsKey(_selectedIndex)) {
-       symptomId = _weeklySymptoms[_selectedIndex]!.first;
+    if (_selectedIndex != -1) {
+      final symptoms = _isWeekly ? _weeklySymptoms[_selectedIndex] : _monthlySymptoms[_selectedIndex];
+      if (symptoms != null && symptoms.isNotEmpty) symptomId = symptoms.first;
     }
-    
     final symptomData = _symptomLibrary[symptomId] ?? _symptomLibrary["normal"]!;
 
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -426,7 +578,7 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Consejo de bienestar",
+                  "Consejo del día",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -451,10 +603,10 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
 
   Widget _buildAdviceCard() {
     String symptomId = "normal";
-    if (_selectedIndex != -1 && _isWeekly && _weeklySymptoms.containsKey(_selectedIndex)) {
-       symptomId = _weeklySymptoms[_selectedIndex]!.first;
+    if (_selectedIndex != -1) {
+      final symptoms = _isWeekly ? _weeklySymptoms[_selectedIndex] : _monthlySymptoms[_selectedIndex];
+      if (symptoms != null && symptoms.isNotEmpty) symptomId = symptoms.first;
     }
-    
     final symptomData = _symptomLibrary[symptomId] ?? _symptomLibrary["normal"]!;
 
     return Column(
@@ -470,6 +622,7 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
         ),
         const SizedBox(height: 16),
         Container(
+          width: double.infinity,
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -505,7 +658,7 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
               ),
               const SizedBox(height: 20),
               Text(
-                "Recuerda que cada emoción es válida y necesaria. Escuchar a tu cuerpo y a tu mente es el acto de amor más grande que puedes hacer por ti. Sigue cuidándote así de bien, ¡te lo mereces todo!",
+                "Recuerda que cada emoción es válida y necesaria. Escuchar a tu cuerpo y a tu mente es el acto de amor más grande.",
                 style: TextStyle(
                   fontSize: 15,
                   color: Colors.grey[500],
@@ -521,10 +674,10 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
 
   Widget _buildHealthyTipsCard() {
     String symptomId = "normal";
-    if (_selectedIndex != -1 && _isWeekly && _weeklySymptoms.containsKey(_selectedIndex)) {
-       symptomId = _weeklySymptoms[_selectedIndex]!.first;
+    if (_selectedIndex != -1) {
+      final symptoms = _isWeekly ? _weeklySymptoms[_selectedIndex] : _monthlySymptoms[_selectedIndex];
+      if (symptoms != null && symptoms.isNotEmpty) symptomId = symptoms.first;
     }
-    
     final symptomData = _symptomLibrary[symptomId] ?? _symptomLibrary["normal"]!;
 
     return Column(
@@ -540,6 +693,7 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
         ),
         const SizedBox(height: 16),
         Container(
+          width: double.infinity,
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: const Color(0xFFF8FAFF),
@@ -566,4 +720,78 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
       ],
     );
   }
+}
+
+class LineChartPainter extends CustomPainter {
+  final List<double> data;
+  final double animationValue;
+  final Color primaryColor;
+  final int selectedIndex;
+
+  LineChartPainter({
+    required this.data,
+    required this.animationValue,
+    required this.primaryColor,
+    required this.selectedIndex,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (data.isEmpty) return;
+
+    final double padding = 20.0;
+    final double graphWidth = size.width - (padding * 2);
+    final double graphHeight = size.height - (padding * 2);
+    final double stepX = graphWidth / (data.length - 1);
+
+    final List<Offset> points = [];
+    for (int i = 0; i < data.length; i++) {
+        final x = padding + (i * stepX);
+        final y = size.height - padding - (data[i] * graphHeight * animationValue);
+        points.add(Offset(x, y));
+    }
+
+    final Path path = Path();
+    path.moveTo(points[0].dx, points[0].dy);
+    
+    for (int i = 0; i < points.length - 1; i++) {
+      final p1 = points[i];
+      final p2 = points[i + 1];
+      final cp1 = Offset(p1.dx + (p2.dx - p1.dx) / 3, p1.dy);
+      final cp2 = Offset(p1.dx + 2 * (p2.dx - p1.dx) / 3, p2.dy);
+      path.cubicTo(cp1.dx, cp1.dy, cp2.dx, cp1.dy, p2.dx, p2.dy);
+    }
+
+    // Gradient Fill
+    final fillPath = Path.from(path)
+      ..lineTo(points.last.dx, size.height)
+      ..lineTo(points.first.dx, size.height)
+      ..close();
+
+    canvas.drawPath(fillPath, Paint()..shader = ui.Gradient.linear(
+      Offset(0, padding), Offset(0, size.height),
+      [primaryColor.withOpacity(0.3), Colors.white.withOpacity(0.0)],
+    ));
+
+    // Smooth Line
+    canvas.drawPath(path, Paint()
+      ..color = primaryColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4.0
+      ..strokeCap = StrokeCap.round);
+
+    // Points
+    for (int i = 0; i < points.length; i++) {
+      final isSelected = selectedIndex == i;
+      if (isSelected) {
+        canvas.drawCircle(points[i], 12, Paint()..color = primaryColor.withOpacity(0.2));
+        canvas.drawCircle(points[i], 8, Paint()..color = primaryColor.withOpacity(0.1));
+      }
+      canvas.drawCircle(points[i], 6, Paint()..color = primaryColor);
+      canvas.drawCircle(points[i], 3, Paint()..color = Colors.white);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant LineChartPainter oldDelegate) => true;
 }
