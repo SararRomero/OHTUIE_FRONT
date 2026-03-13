@@ -9,6 +9,7 @@ import '../../core/widgets/logout_modal.dart';
 import '../../core/widgets/session_expired_modal.dart';
 import 'cycle_history_screen.dart';
 import '../emotions/emotions_screen.dart';
+import '../cycle_analysis/cycle_analysis_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Map<String, dynamic>? initialUserData;
@@ -177,7 +178,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             }
                           ),
                           Divider(height: 1, thickness: 1, color: Colors.grey[100], indent: 16, endIndent: 16),
-                          _buildMenuItem(Icons.analytics_outlined, "Analisis de sus Ciclos"),
+                          _buildMenuItem(
+                            Icons.analytics_outlined, 
+                            "Analisis de sus Ciclos",
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const CycleAnalysisScreen()),
+                              );
+                            }
+                          ),
                         ],
                       ),
                     ),
