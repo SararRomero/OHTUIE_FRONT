@@ -100,7 +100,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF0F3), // Light pink background
+      backgroundColor: const Color(0xFFF3F6FF), // Blue admin background
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

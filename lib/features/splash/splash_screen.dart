@@ -4,6 +4,8 @@ import '../../core/theme/app_colors.dart';
 import '../auth/sign_up_screen.dart';
 import '../auth/auth_service.dart';
 import '../home/user_home_screen.dart';
+import '../admin/admin_dashboard_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -39,11 +41,21 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       final token = await AuthService.getToken();
       if (mounted) {
         if (token != null && token.isNotEmpty) {
-          // If token exists, go to Home (Calendar) and clear history
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const UserHomeScreen()),
-            (route) => false,
-          );
+          final prefs = await SharedPreferences.getInstance();
+          final userRole = prefs.getString('user_role');
+          
+          if (userRole == 'admin') {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
+              (route) => false,
+            );
+          } else {
+            // Otherwise go to Home (Calendar) and clear history
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const UserHomeScreen()),
+              (route) => false,
+            );
+          }
         } else {
           // Otherwise go to Sign Up/Landing and clear history
           Navigator.of(context).pushAndRemoveUntil(

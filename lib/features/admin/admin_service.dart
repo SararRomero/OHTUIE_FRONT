@@ -29,12 +29,16 @@ class AdminService {
     }
   }
 
-  static Future<Map<String, dynamic>> getUsers() async {
+  static Future<Map<String, dynamic>> getUsers({int page = 1, int limit = 20, String status = "all", String? search}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
-      final response = await ApiClient.get("/users/", token: token);
-      
+      final skip = (page - 1) * limit;
+      String url = "/users?skip=$skip&limit=$limit&status=$status";
+      if (search != null && search.isNotEmpty) {
+        url += "&search=${Uri.encodeComponent(search)}";
+      }
+      final response = await ApiClient.get(url, token: token);
       if (response.statusCode == 200) {
         return {
           "success": true,

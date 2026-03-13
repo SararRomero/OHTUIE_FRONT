@@ -2,8 +2,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'admin_edit_profile_screen.dart';
 import '../../core/widgets/logout_modal.dart';
+import 'users_list_screen.dart';
+import 'security_stats_screen.dart';
+import 'global_reports_screen.dart';
+import 'data_analysis_screen.dart';
 
 class AdminSettingsScreen extends StatelessWidget {
+
   const AdminSettingsScreen({super.key});
 
   @override
@@ -40,8 +45,10 @@ class AdminSettingsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    padding: const EdgeInsets.all(8),
-                    child: const Icon(Icons.menu, size: 24, color: Colors.black),
+                    child: IconButton(
+                      icon: const Icon(Icons.menu, size: 24, color: Colors.black),
+                      onPressed: () => Navigator.pop(context),
+                    ),
                   ),
                 ],
               ),
@@ -124,18 +131,33 @@ class AdminSettingsScreen extends StatelessWidget {
                     _buildMenuItem(
                       icon: Icons.people_outline,
                       title: 'Gestión de Usuarias',
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const UsersListScreen()),
+                        );
+                      },
                       isFirst: true,
                     ),
                     _buildMenuItem(
                       icon: Icons.security_outlined,
                       title: 'Estadísticas de Seguridad',
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const SecurityStatsScreen()),
+                        );
+                      },
                     ),
                     _buildMenuItem(
                       icon: Icons.bar_chart_outlined,
                       title: 'Reportes Globales',
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const GlobalReportsScreen()),
+                        );
+                      },
                       isLast: true,
                     ),
                   ],
@@ -163,12 +185,17 @@ class AdminSettingsScreen extends StatelessWidget {
                     _buildMenuItem(
                       icon: Icons.analytics_outlined,
                       title: 'Análisis de Datos',
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const DataAnalysisScreen()),
+                        );
+                      },
                       isFirst: true,
                     ),
                     _buildMenuItem(
                       icon: Icons.logout,
-                      title: 'Log Out',
+                      title: 'Cerrar Sesión',
                       titleColor: const Color(0xFFFF5252),
                       iconColor: const Color(0xFFFF5252),
                       onTap: () {
