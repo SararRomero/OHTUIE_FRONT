@@ -77,42 +77,40 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
           children: [
             _buildAppBar(),
             Expanded(
-              child: _isLoading && _cycles.isEmpty
-                  ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF85A1)))
-                  : Stack(
+              child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildSummaryGrid(),
-                              const SizedBox(height: 35),
-                              const Text(
-                                "Historial",
-                                style: TextStyle(
-                                  fontSize: 26, 
-                                  fontWeight: FontWeight.w900, 
-                                  color: Colors.black,
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              _buildFilterBar(),
-                              const SizedBox(height: 24),
-                              _buildHistoryList(),
-                              const SizedBox(height: 40),
-                            ],
+                        _buildSummaryGrid(),
+                        const SizedBox(height: 35),
+                        const Text(
+                          "Historial",
+                          style: TextStyle(
+                            fontSize: 26, 
+                            fontWeight: FontWeight.w900, 
+                            color: Colors.black,
+                            letterSpacing: -0.5,
                           ),
                         ),
-                        if (_isLoading && _cycles.isNotEmpty)
-                          const Positioned(
-                            top: 0, left: 0, right: 0,
-                            child: LinearProgressIndicator(color: Color(0xFFFF85A1), backgroundColor: Colors.transparent, minHeight: 2),
-                          ),
+                        const SizedBox(height: 20),
+                        _buildFilterBar(),
+                        const SizedBox(height: 24),
+                        _buildHistoryList(),
+                        const SizedBox(height: 40),
                       ],
                     ),
+                  ),
+                  if (_isLoading)
+                    const Positioned(
+                      top: 0, left: 0, right: 0,
+                      child: LinearProgressIndicator(color: Color(0xFFFF85A1), backgroundColor: Colors.transparent, minHeight: 2),
+                    ),
+                ],
+              ),
             ),
           ],
         ),
@@ -157,23 +155,27 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
       children: [
         Expanded(
           child: _InteractiveSummaryCard(
-            gradient: const [Color(0xFFFFB2C1), Color(0xFFFF85A1)],
+            cardGradient: const [Color(0xFFFFF2F5), Color(0xFFFFEAF0)],
+            iconGradient: const [Color(0xFFFFB2C1), Color(0xFFFF85A1)],
+            textColor: Colors.black87,
             icon: Icons.water_drop_rounded,
             value: "${_stats['period_duration'] ?? '--'}",
             unit: "días",
             label: "Sangrado",
-            shadowColor: const Color(0xFFFFB2C1),
+            shadowColor: const Color(0xFFFFB2C1).withOpacity(0.4),
           ),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: _InteractiveSummaryCard(
-            gradient: const [Color(0xFFBDD4FF), Color(0xFF81A4FF)],
+            cardGradient: const [Color(0xFFF5F8FF), Color(0xFFE8EFFF)],
+            iconGradient: const [Color(0xFFBDD4FF), Color(0xFF81A4FF)],
+            textColor: Colors.black87,
             icon: Icons.calendar_month_rounded,
             value: "${_stats['avg_cycle_duration'] ?? '--'}",
             unit: "días",
-            label: "tu Ciclo",
-            shadowColor: const Color(0xFFBDD4FF),
+            label: "Ciclo",
+            shadowColor: const Color(0xFFBDD4FF).withOpacity(0.4),
           ),
         ),
       ],
@@ -427,7 +429,9 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
 }
 
 class _InteractiveSummaryCard extends StatefulWidget {
-  final List<Color> gradient;
+  final List<Color> cardGradient;
+  final List<Color> iconGradient;
+  final Color textColor;
   final IconData icon;
   final String value;
   final String unit;
@@ -435,7 +439,9 @@ class _InteractiveSummaryCard extends StatefulWidget {
   final Color shadowColor;
 
   const _InteractiveSummaryCard({
-    required this.gradient,
+    required this.cardGradient,
+    required this.iconGradient,
+    required this.textColor,
     required this.icon,
     required this.value,
     required this.unit,
@@ -464,7 +470,7 @@ class _InteractiveSummaryCardState extends State<_InteractiveSummaryCard> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: widget.gradient),
+                  gradient: LinearGradient(colors: widget.iconGradient),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(widget.icon, color: Colors.white, size: 32),
@@ -487,8 +493,8 @@ class _InteractiveSummaryCardState extends State<_InteractiveSummaryCard> {
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: widget.shadowColor.withOpacity(0.1),
-                    foregroundColor: widget.shadowColor,
+                    backgroundColor: widget.shadowColor.withOpacity(0.15),
+                    foregroundColor: widget.iconGradient.last,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -519,14 +525,14 @@ class _InteractiveSummaryCardState extends State<_InteractiveSummaryCard> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: widget.gradient,
+              colors: widget.cardGradient,
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: widget.shadowColor.withOpacity(_isPressed ? 0.2 : 0.6),
+                color: widget.shadowColor.withOpacity(_isPressed ? 0.2 : 0.5),
                 blurRadius: _isPressed ? 8 : 20,
                 spreadRadius: _isPressed ? 1 : 4,
                 offset: Offset(0, _isPressed ? 4 : 8),
@@ -538,7 +544,10 @@ class _InteractiveSummaryCardState extends State<_InteractiveSummaryCard> {
             children: [
               Container(
                 padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: widget.iconGradient),
+                  shape: BoxShape.circle,
+                ),
                 child: Icon(widget.icon, color: Colors.white, size: 18),
               ),
               const SizedBox(height: 12),
@@ -548,19 +557,19 @@ class _InteractiveSummaryCardState extends State<_InteractiveSummaryCard> {
                 children: [
                   Text(
                     widget.value,
-                    style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: widget.textColor, fontSize: 28, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(width: 4),
                   Text(
                     widget.unit,
-                    style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13, fontWeight: FontWeight.w500),
+                    style: TextStyle(color: widget.textColor.withOpacity(0.7), fontSize: 13, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
               const SizedBox(height: 2),
               Text(
                 widget.label,
-                style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14, fontWeight: FontWeight.w500),
+                style: TextStyle(color: widget.textColor.withOpacity(0.8), fontSize: 14, fontWeight: FontWeight.w600),
               ),
             ],
           ),
