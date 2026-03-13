@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 // (Colocar en su respectiva carpeta de core/widgets si se desea globalizar)
 // ============================================================================
 
-class CycleStatCard extends StatelessWidget {
+class CycleStatCard extends StatefulWidget {
   final IconData icon;
   final Color iconColor;
   final String title;
@@ -22,57 +22,83 @@ class CycleStatCard extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<CycleStatCard> createState() => _CycleStatCardState();
+}
+
+class _CycleStatCardState extends State<CycleStatCard> {
+  bool _isPressed = false;
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 90,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            )
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.08),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(icon, color: iconColor, size: 14),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
-                ),
-              ],
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _isPressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 100),
+          height: 88,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(_isPressed ? 0.03 : 0.015),
+                blurRadius: _isPressed ? 5 : 10,
+                offset: Offset(0, _isPressed ? 1 : 4),
+              )
+            ],
+            border: Border.all(
+              color: _isPressed 
+                ? widget.iconColor.withOpacity(0.1)
+                : Colors.black.withOpacity(0.02),
+              width: 1,
             ),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AnimatedScale(
+                    duration: const Duration(milliseconds: 150),
+                    scale: _isPressed ? 1.15 : 1.0,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: widget.iconColor.withOpacity(0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(widget.icon, color: widget.iconColor, size: 14),
+                    ),
+                  ),
+                  Text(
+                    widget.subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              Text(
+                widget.title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

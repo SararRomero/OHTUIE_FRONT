@@ -14,6 +14,7 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
   List<dynamic> _cycles = [];
   Map<String, dynamic> _stats = {};
   String _activeFilter = "Todo";
+  final List<String> _filters = ["Todo", "Mes anterior", "5 últimos", "Actual"];
 
   @override
   void initState() {
@@ -22,27 +23,46 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    // If not empty, don't show full loading, just background load
+    if (_cycles.isEmpty) {
+       setState(() => _isLoading = true);
+    }
     
-    // Performance optimization: Parallel fetching
     final results = await Future.wait([
       CycleHistoryService.getCycleHistory(),
       CycleHistoryService.getPredictionStats(),
     ]);
 
-    final historyResult = results[0];
-    final statsResult = results[1];
-
     if (mounted) {
       setState(() {
-        if (historyResult['success']) {
-          _cycles = historyResult['data'];
+        if (results[0]['success']) {
+          _cycles = results[0]['data'];
         }
-        if (statsResult['success']) {
-          _stats = statsResult['data'];
+        if (results[1]['success']) {
+          _stats = results[1]['data'];
         }
         _isLoading = false;
       });
+    }
+  }
+
+  List<dynamic> get _filteredCycles {
+    if (_cycles.isEmpty) return [];
+    final now = DateTime.now();
+    switch (_activeFilter) {
+      case "Mes anterior":
+        return _cycles.where((c) {
+           final start = DateTime.parse(c['start_date']);
+           return start.month == now.month - 1 || (now.month == 1 && start.month == 12 && start.year == now.year - 1);
+        }).toList();
+      case "5 últimos":
+        return _cycles.take(5).toList();
+      case "Actual":
+        if (_cycles.isNotEmpty) return [_cycles.first];
+        return [];
+      case "Todo":
+      default:
+        return _cycles;
     }
   }
 
@@ -57,32 +77,41 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
           children: [
             _buildAppBar(),
             Expanded(
-              child: _isLoading
+              child: _isLoading && _cycles.isEmpty
                   ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF85A1)))
-                  : SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSummaryGrid(),
-                          const SizedBox(height: 35),
-                          const Text(
-                            "Historial",
-                            style: TextStyle(
-                              fontSize: 26, 
-                              fontWeight: FontWeight.w900, 
-                              color: Colors.black,
-                              letterSpacing: -0.5,
-                            ),
+                  : Stack(
+                      children: [
+                        SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSummaryGrid(),
+                              const SizedBox(height: 35),
+                              const Text(
+                                "Historial",
+                                style: TextStyle(
+                                  fontSize: 26, 
+                                  fontWeight: FontWeight.w900, 
+                                  color: Colors.black,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              _buildFilterBar(),
+                              const SizedBox(height: 24),
+                              _buildHistoryList(),
+                              const SizedBox(height: 40),
+                            ],
                           ),
-                          const SizedBox(height: 20),
-                          _buildFilterBar(),
-                          const SizedBox(height: 24),
-                          _buildHistoryList(),
-                          const SizedBox(height: 40),
-                        ],
-                      ),
+                        ),
+                        if (_isLoading && _cycles.isNotEmpty)
+                          const Positioned(
+                            top: 0, left: 0, right: 0,
+                            child: LinearProgressIndicator(color: Color(0xFFFF85A1), backgroundColor: Colors.transparent, minHeight: 2),
+                          ),
+                      ],
                     ),
             ),
           ],
@@ -93,6 +122,7 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
 
   Widget _buildAppBar() {
     return SafeArea(
+      bottom: false,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Row(
@@ -151,6 +181,14 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
   }
 
   Widget _buildHistoryList() {
+    final list = _filteredCycles;
+    if (list.isEmpty) {
+       return const Center(child: Padding(
+         padding: EdgeInsets.all(40),
+         child: Text("No hay datos para este filtro", style: TextStyle(color: Colors.grey)),
+       ));
+    }
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -164,10 +202,10 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
       child: ListView.separated(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        itemCount: _cycles.length,
+        itemCount: list.length,
         separatorBuilder: (context, index) => Divider(height: 48, color: Colors.grey[50]),
         itemBuilder: (context, index) {
-          final cycle = _cycles[index];
+          final cycle = list[index];
           final start = DateTime.parse(cycle['start_date']);
           final end = cycle['end_date'] != null ? DateTime.parse(cycle['end_date']) : null;
           
@@ -192,6 +230,7 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
               dateRange: _formatDateRange(start, end),
               duration: duration,
               bleedingDays: _stats['period_duration'] ?? 5,
+              onTap: () => _showCycleDetailModal(context, duration, _stats['period_duration'] ?? 5)
             ),
           );
         },
@@ -215,11 +254,7 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
         child: Row(
-          children: [
-            _buildFilterItem("Todo"),
-            _buildFilterItem("Mes anterior"),
-            _buildFilterItem("Ventana Fértil"),
-          ],
+          children: _filters.map((f) => _buildFilterItem(f)).toList(),
         ),
       ),
     );
@@ -253,7 +288,7 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
     );
   }
 
-  Widget _buildCycleHistoryItem({required String dateRange, required int duration, required int bleedingDays}) {
+  Widget _buildCycleHistoryItem({required String dateRange, required int duration, required int bleedingDays, required VoidCallback onTap}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -264,12 +299,29 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
               dateRange,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: const Color(0xFFF5F6FF), borderRadius: BorderRadius.circular(8)),
-              child: Text(
-                "$duration días",
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF81A4FF)),
+            GestureDetector(
+              onTap: onTap,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F6FF), 
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF81A4FF).withOpacity(0.2)),
+                  boxShadow: [
+                    BoxShadow(color: const Color(0xFF81A4FF).withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
+                  ]
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      "$duration días",
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF81A4FF)),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.touch_app_rounded, size: 14, color: Color(0xFF81A4FF))
+                  ],
+                ),
               ),
             ),
           ],
@@ -314,6 +366,64 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
       }),
     );
   }
+
+  void _showCycleDetailModal(BuildContext context, int totalDays, int bleedingDays) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 24),
+            const Text("Detalles del Ciclo", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildModalStatItem(Icons.water_drop, "Sangrado", "$bleedingDays días", const Color(0xFFFF85A1)),
+                Container(width: 1, height: 40, color: Colors.grey[200]),
+                _buildModalStatItem(Icons.calendar_month, "Ciclo Total", "$totalDays días", const Color(0xFF81A4FF)),
+              ],
+            ),
+            const SizedBox(height: 40),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF5F6FF),
+                  foregroundColor: const Color(0xFF81A4FF),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text("Entendido", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModalStatItem(IconData icon, String title, String value, Color color) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 28),
+        const SizedBox(height: 8),
+        Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+        Text(title, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+      ],
+    );
+  }
 }
 
 class _InteractiveSummaryCard extends StatefulWidget {
@@ -340,30 +450,85 @@ class _InteractiveSummaryCard extends StatefulWidget {
 class _InteractiveSummaryCardState extends State<_InteractiveSummaryCard> {
   bool _isPressed = false;
 
+  void _showCardActionModal() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: widget.gradient),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(widget.icon, color: Colors.white, size: 32),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "¡Tu ${widget.label}!",
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "El promedio de tu ${widget.label.toLowerCase()} es de ${widget.value} ${widget.unit}. Mantén el registro de tus ciclos para predicciones más precisas.",
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: widget.shadowColor.withOpacity(0.1),
+                    foregroundColor: widget.shadowColor,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text("Cerrar", style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) => setState(() => _isPressed = false),
       onTapCancel: () => setState(() => _isPressed = false),
-      onTap: () {},
+      onTap: _showCardActionModal,
       child: AnimatedScale(
-        scale: _isPressed ? 0.94 : 1.0,
-        duration: const Duration(milliseconds: 100),
+        scale: _isPressed ? 0.90 : 1.0,
+        curve: Curves.easeOutBack,
+        duration: const Duration(milliseconds: 200),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 100),
-          padding: const EdgeInsets.all(20),
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: widget.gradient,
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: widget.shadowColor.withOpacity(_isPressed ? 0.2 : 0.4),
-                blurRadius: _isPressed ? 8 : 15,
+                color: widget.shadowColor.withOpacity(_isPressed ? 0.2 : 0.6),
+                blurRadius: _isPressed ? 8 : 20,
+                spreadRadius: _isPressed ? 1 : 4,
                 offset: Offset(0, _isPressed ? 4 : 8),
               ),
             ],
@@ -372,30 +537,30 @@ class _InteractiveSummaryCardState extends State<_InteractiveSummaryCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
-                child: Icon(widget.icon, color: Colors.white, size: 22),
+                child: Icon(widget.icon, color: Colors.white, size: 18),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
                     widget.value,
-                    style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                    style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(width: 4),
                   Text(
                     widget.unit,
-                    style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
+                    style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 widget.label,
-                style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 15, fontWeight: FontWeight.w500),
+                style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14, fontWeight: FontWeight.w500),
               ),
             ],
           ),
