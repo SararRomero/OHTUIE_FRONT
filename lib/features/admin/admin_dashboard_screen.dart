@@ -12,8 +12,11 @@ class AdminDashboardScreen extends StatefulWidget {
   State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
 }
 
-class _AdminDashboardScreenState extends State<AdminDashboardScreen> with SingleTickerProviderStateMixin {
+class _AdminDashboardScreenState extends State<AdminDashboardScreen> with TickerProviderStateMixin {
   late TabController _tabController;
+  late AnimationController _chartController;
+  late Animation<double> _chartAnimation;
+  int _selectedIndex = -1;
   bool _isLoading = true;
   bool _isLoadingUsers = false;
   Map<String, dynamic>? _stats;
@@ -26,6 +29,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _chartController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    _chartAnimation = CurvedAnimation(
+      parent: _chartController,
+      curve: Curves.easeOutQuart,
+    );
+    _chartController.forward();
     _loadStats();
     _loadUsers();
   }
@@ -88,6 +100,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   @override
   void dispose() {
     _tabController.dispose();
+    _chartController.dispose();
     super.dispose();
   }
 
@@ -121,9 +134,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
         ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: const Color(0xFFFF4081),
-          labelColor: const Color(0xFFFF4081),
+          indicatorColor: Colors.blue,
+          labelColor: Colors.blue,
           unselectedLabelColor: Colors.grey,
+          dividerColor: Colors.transparent,
           tabs: const [
             Tab(text: 'Gestión de Seguridad'),
             Tab(text: 'Gestión de Usuarios'),
@@ -176,26 +190,67 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       child: Column(
         children: [
           _buildChartCard(
-            title: 'Intentos fallidos de login (últimas 24h)',
-            chart: _buildLineChart([
-              FlSpot(0, 1),
-              FlSpot(1, 1.5),
-              FlSpot(2, 1.2),
-              FlSpot(3, 2.5),
-              FlSpot(4, 2),
-              FlSpot(5, 3.5),
-              FlSpot(6, _stats?['failed_logins_24h']?.toDouble() ?? 0),
-            ], color: Colors.green),
+            title: 'Intentos fallidos de login\n(última semana)',
+            chart: _buildAnimatedBarChart(),
             actionIcon: Icons.trending_up,
             actionColor: Colors.green,
+            dateRange: _getDynamicDateRange(),
+          ),
+          const SizedBox(height: 24),
+          _buildSecurityTextStats(),
+        ],
+      ),
+    );
+  }
+
+  String _getDynamicDateRange() {
+    final now = DateTime.now();
+    final sevenDaysAgo = now.subtract(const Duration(days: 6));
+    final months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+    return "${months[sevenDaysAgo.month - 1]} ${sevenDaysAgo.day} - ${months[now.month - 1]} ${now.day}";
+  }
+
+  Widget _buildSecurityTextStats() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Estado de Seguridad', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(color: Colors.green.withAlpha((0.1 * 255).toInt()), shape: BoxShape.circle),
+                    child: const Icon(Icons.shield_outlined, size: 16, color: Colors.green),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text('Intentos fallidos hoy', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                ],
+              ),
+              Text('${_stats?['failed_logins_24h'] ?? 0}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
           ),
           const SizedBox(height: 16),
-          _buildStatsCard(
-            title: 'Estado de Seguridad',
-            stats: [
-              _StatItem(label: 'Intentos fallidos hoy', value: '${_stats?['failed_logins_24h'] ?? 0}'),
-              _StatItem(label: 'Usuarios bloqueados', value: '0'),
-              _StatItem(label: 'Alertas críticas', value: '0'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(color: Colors.orange.withAlpha((0.1 * 255).toInt()), shape: BoxShape.circle),
+                    child: const Icon(Icons.lock_outline, size: 16, color: Colors.orange),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text('Usuarios bloqueados', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                ],
+              ),
+              const Text('0', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ],
           ),
         ],
@@ -319,7 +374,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
 
   // _showEditUserDialog and _deleteUser removed from here as they are now in UsersListScreen
 
-  Widget _buildChartCard({required String title, required Widget chart, required IconData actionIcon, required Color actionColor}) {
+  Widget _buildChartCard({required String title, required Widget chart, required IconData actionIcon, required Color actionColor, String? dateRange}) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -331,14 +386,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded( // Fix overflow
+              Expanded(
                 child: Text(
                   title, 
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  overflow: TextOverflow.ellipsis,
+                  overflow: TextOverflow.visible,
                 ),
               ),
+              const SizedBox(width: 10),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(color: actionColor.withAlpha((0.1 * 255).toInt()), shape: BoxShape.circle),
@@ -346,17 +403,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.chevron_left, color: Colors.grey),
-              const Text('Enero 23 - Febrero 23', style: TextStyle(color: Colors.grey, fontSize: 12)),
-              const Icon(Icons.chevron_right, color: Colors.grey),
-            ],
-          ),
+          if (dateRange != null) ...[
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.chevron_left, color: Colors.grey),
+                Text(dateRange, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                const Icon(Icons.chevron_right, color: Colors.grey),
+              ],
+            ),
+          ],
           const SizedBox(height: 20),
-          SizedBox(height: 150, child: chart),
+          SizedBox(height: 180, child: chart),
         ],
       ),
     );
@@ -441,24 +500,125 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     );
   }
 
-  Widget _buildLineChart(List<FlSpot> spots, {required Color color}) {
-    return LineChart(
-      LineChartData(
-        gridData: FlGridData(show: false),
-        titlesData: FlTitlesData(show: false),
-        borderData: FlBorderData(show: false),
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            isCurved: true,
-            color: color,
-            barWidth: 3,
-            isStrokeCapRound: true,
-            dotData: FlDotData(show: true),
-            belowBarData: BarAreaData(show: true, color: color.withAlpha((0.1 * 255).toInt())),
+  Widget _buildAnimatedBarChart() {
+    // Process backend data
+    final Map<String, dynamic> rawSevenDays = _stats?['failed_logins_last_7_days'] ?? {};
+    
+    // Generate dates for the last 7 days to ensure we have exactly 7 points
+    final now = DateTime.now();
+    final List<double> rawData = [];
+    final List<String> dayLabels = [];
+    final weekDays = ["L", "M", "Mi", "J", "V", "S", "D"];
+    
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      final dateStr = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+      
+      // Look up using YYYY-MM-DD
+      double val = 0.0;
+      if (rawSevenDays.containsKey(dateStr)) {
+        val = (rawSevenDays[dateStr] as num).toDouble();
+      }
+      
+      rawData.add(val);
+      dayLabels.add(weekDays[date.weekday - 1]);
+    }
+
+    final double maxVal = rawData.reduce(math.max) > 0 ? rawData.reduce(math.max) : 1;
+    final List<double> normalizedData = rawData.map((e) => e / maxVal).toList();
+    final primaryColor = Colors.green;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 120, // Reduced height for the card
+          child: AnimatedBuilder(
+            animation: _chartAnimation,
+            builder: (context, child) {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: normalizedData.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final value = entry.value;
+                  final isSelected = _selectedIndex == index;
+
+                  return GestureDetector(
+                    onTap: () => setState(() => _selectedIndex = isSelected ? -1 : index),
+                    behavior: HitTestBehavior.opaque,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 90 * value * _chartAnimation.value,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: isSelected
+                                ? [primaryColor, primaryColor.withOpacity(0.7)]
+                                : [primaryColor.withOpacity(0.2), primaryColor.withOpacity(0.4)],
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: isSelected ? [
+                              BoxShadow(
+                                color: primaryColor.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              )
+                            ] : [],
+                          ),
+                          child: isSelected ? Center(
+                            child: Container(
+                              width: 5,
+                              height: 5,
+                              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                            ),
+                          ) : null,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          dayLabels[index],
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: isSelected ? primaryColor : Colors.grey[400],
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              );
+            },
           ),
-        ],
-      ),
+        ),
+        if (_selectedIndex != -1)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                "Valor: ${rawData[_selectedIndex].toInt()}",
+                style: TextStyle(color: primaryColor.withOpacity(0.8), fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Text(
+              "Toca una barra para ver detalles",
+              style: TextStyle(color: Colors.grey[400], fontSize: 10, fontStyle: FontStyle.italic),
+            ),
+          ),
+      ],
     );
   }
 
@@ -566,7 +726,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     );
   }
 
-  Widget _buildStatsCard({required String title, required List<_StatItem> stats}) {
+  Widget _buildStatsCard({required String title, required List<_StatItem> stats, IconData? actionIcon, Color? actionColor}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -577,7 +737,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              if (actionIcon != null && actionColor != null)
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: actionColor.withAlpha((0.1 * 255).toInt()), shape: BoxShape.circle),
+                  child: Icon(actionIcon, size: 20, color: actionColor),
+                ),
+            ],
+          ),
           const SizedBox(height: 16),
           ...stats.map((item) => Padding(
             padding: const EdgeInsets.only(bottom: 8.0),

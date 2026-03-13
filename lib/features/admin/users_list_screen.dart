@@ -485,25 +485,40 @@ class _UsersListScreenState extends State<UsersListScreen> {
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text('Editar Usuario', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(
-                labelText: 'Nombre Completo',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.9,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                cursorColor: const Color(0xFFFF4081),
+                decoration: InputDecoration(
+                  labelText: 'Nombre Completo',
+                  floatingLabelStyle: const TextStyle(color: Color(0xFFFF4081)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFFF4081), width: 2),
+                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: emailController,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: emailController,
+                cursorColor: const Color(0xFFFF4081),
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  floatingLabelStyle: const TextStyle(color: Color(0xFFFF4081)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFFF4081), width: 2),
+                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -540,6 +555,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
   void _toggleUserStatus(Map<String, dynamic> user) {
     final isActive = user['is_active'] ?? true;
     final action = isActive ? "Bloquear" : "Desbloquear";
+    final actionColor = isActive ? Colors.orange : Colors.green;
     final passwordController = TextEditingController();
 
     showDialog(
@@ -555,8 +571,14 @@ class _UsersListScreenState extends State<UsersListScreen> {
             TextField(
               controller: passwordController,
               obscureText: true,
+              cursorColor: actionColor,
               decoration: InputDecoration(
                 labelText: 'Contraseña de Administradora',
+                floatingLabelStyle: TextStyle(color: actionColor),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: actionColor, width: 2),
+                ),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
@@ -569,7 +591,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: isActive ? Colors.orange : Colors.green,
+              backgroundColor: actionColor,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () async {
@@ -614,8 +636,14 @@ class _UsersListScreenState extends State<UsersListScreen> {
             TextField(
               controller: passwordController,
               obscureText: true,
+              cursorColor: Colors.red,
               decoration: InputDecoration(
                 labelText: 'Contraseña de Administradora',
+                floatingLabelStyle: const TextStyle(color: Colors.red),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.red, width: 2),
+                ),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
