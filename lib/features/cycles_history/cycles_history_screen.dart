@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import './cycle_history_service.dart';
+import '../profile/user_service.dart';
 
 // ============================================================================
 // WIDGETS DESACOPLADOS - COMPONENTES REUTILIZABLES
@@ -110,6 +113,7 @@ class CycleHistoryListItem extends StatelessWidget {
   final int daysCount;
   final List<CycleSegmentStatus> segments;
   final VoidCallback onTap;
+  final bool isCurrentCycle;
 
   const CycleHistoryListItem({
     Key? key,
@@ -117,6 +121,7 @@ class CycleHistoryListItem extends StatelessWidget {
     required this.daysCount,
     required this.segments,
     required this.onTap,
+    this.isCurrentCycle = false,
   }) : super(key: key);
 
   @override
@@ -130,13 +135,31 @@ class CycleHistoryListItem extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                dateRange,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (isCurrentCycle)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 2.0),
+                      child: Text(
+                        "Ciclo Actual",
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF90B0FF),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  Text(
+                    dateRange,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
               ),
               Text(
                 daysCount.toString(),
@@ -178,56 +201,61 @@ class CycleVisualizerTimeline extends StatelessWidget {
   }
 
   Widget _buildSegmentLine(CycleSegmentStatus status) {
-    // Colores basados en la imagen compartida y en la paleta actual
-    final Color pastColor = const Color(0xFFE1D0F5); // Morado claro para "días pasados"
-    final Color dotColor = const Color(0xFFE1D0F5); // Morado para el punto principal
-    final Color futureColor = const Color(0xFFFDEAF0); // Rosado muy claro para "días futuros"
+    // Colores basados en las fases del ciclo
+    final Color periodColor = const Color(0xFFEBD8F5); // Morado para el periodo
+    final Color fertileColor = const Color(0xFFCCEAFF); // Azul para ventana fértil
+    final Color normalColor = const Color(0xFFF5F5F5); // Gris claro para días normales
+    final Color dotColor = const Color(0xFF90B0FF); // Punto indicador
 
     if (status == CycleSegmentStatus.current) {
       return Center(
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeIn,
-          width: 10,
-          height: 10,
+        child: Container(
+          width: 8,
+          height: 8,
           decoration: BoxDecoration(
             color: dotColor,
             shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: dotColor.withOpacity(0.4),
+                blurRadius: 4,
+                spreadRadius: 2,
+              )
+            ]
           ),
         ),
       );
     }
 
-    Color color = (status == CycleSegmentStatus.past) ? pastColor : futureColor;
+    Color color;
+    switch(status) {
+      case CycleSegmentStatus.past:
+        color = periodColor; // Fallback or logic specific
+        break;
+      case CycleSegmentStatus.period:
+        color = periodColor;
+        break;
+      case CycleSegmentStatus.fertile:
+        color = fertileColor;
+        break;
+      case CycleSegmentStatus.future:
+      default:
+        color = normalColor;
+        break;
+    }
 
     return Container(
-      height: 4,
+      height: 6, // Slightly thicker like the capsules
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(2),
+        borderRadius: BorderRadius.circular(3),
       ),
     );
   }
 }
 
 
-// ============================================================================
-// MODELOS MOCK (REMOVER O REEMPLAZAR DURANTE LA INTEGRACIÓN AL BACKEND)
-// ============================================================================
-
-enum CycleSegmentStatus { past, current, future, empty }
-
-class CycleHistoryMock {
-  final String dateRange;
-  final int daysCount;
-  final List<CycleSegmentStatus> segments;
-
-  CycleHistoryMock({
-    required this.dateRange,
-    required this.daysCount,
-    required this.segments,
-  });
-}
+enum CycleSegmentStatus { past, current, future, empty, period, fertile } 
 
 
 // ============================================================================
@@ -250,58 +278,75 @@ class CyclesHistoryScreen extends StatefulWidget {
 }
 
 class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
-  // TODO (Backend): Variable para controlar la carga (Loading state)
-  // bool isLoading = false;
+  bool _isLoading = true;
+  List<dynamic> _cycles = [];
+  Map<String, dynamic>? _prediction;
+  int _avgCycleDuration = 28;
+  int _avgPeriodDuration = 5;
 
   // Manejo visual de las tabs
   int _selectedTabIndex = 0;
   final List<String> _tabs = ['Todo', 'Mes anterior', 'Ventana Fertil'];
 
-  // Datos quemados para UI (Mock Data)
-  late final List<CycleHistoryMock> _mockData;
-
   @override
   void initState() {
     super.initState();
-    // TODO (Backend): Llamar al provider/bloc/cubit para cargar datos aquí en vez de usar mocks
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
+
+    try {
+      final cyclesResp = await CycleHistoryService.getCycles();
+      final predictionResp = await CycleHistoryService.getPrediction();
+      final userResp = await UserService.getUserMe();
+
+      if (mounted) {
+        setState(() {
+          if (cyclesResp['success']) {
+            _cycles = cyclesResp['data'];
+          }
+          if (predictionResp['success']) {
+            _prediction = predictionResp['data'];
+          }
+          if (userResp['success']) {
+            _avgCycleDuration = userResp['data']['cycle_duration'] ?? 28;
+            _avgPeriodDuration = userResp['data']['period_duration'] ?? 5;
+          }
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar datos: $e')),
+        );
+      }
+    }
+  }
+
+  String _formatDateRange(String? start, String? end) {
+    if (start == null) return "Fecha desconocida";
+    final startDate = DateTime.parse(start);
+    final startStr = DateFormat('MMMM d', 'en').format(startDate); // Adjust locale if needed
     
-    _mockData = [
-      CycleHistoryMock(
-        dateRange: 'March 11 - March 16, 2024',
-        daysCount: 20,
-        segments: _createSegments(3, 1, 6),
-      ),
-      CycleHistoryMock(
-        dateRange: 'March 15 - March 20, 2024',
-        daysCount: 21,
-        segments: _createSegments(4, 1, 5),
-      ),
-      CycleHistoryMock(
-        dateRange: 'March 16 - March 21, 2024',
-        daysCount: 19,
-        segments: _createSegments(2, 1, 7),
-      ),
-      CycleHistoryMock(
-        dateRange: 'March 19 - March 28, 2024',
-        daysCount: 22,
-        segments: _createSegments(1, 1, 8),
-      ),
-      CycleHistoryMock(
-        dateRange: 'March 10 - March 28, 2024',
-        daysCount: 21,
-        segments: _createSegments(5, 1, 4),
-      ),
-      CycleHistoryMock(
-        dateRange: 'March 20 - March 29, 2024',
-        daysCount: 18,
-        segments: _createSegments(4, 1, 5),
-      ),
-      CycleHistoryMock(
-        dateRange: 'March 5 - March 10, 2024',
-        daysCount: 29,
-        segments: _createSegments(0, 0, 10), // Ejemplo sin "current" (solo futuros o vacíos)
-      ),
-    ];
+    if (end == null) {
+      return "$startStr - Actualidad";
+    }
+    
+    final endDate = DateTime.parse(end);
+    final endStr = DateFormat('MMMM d, yyyy', 'en').format(endDate);
+    return "$startStr - $endStr";
+  }
+
+  int _calculateDays(String? start, String? end) {
+    if (start == null) return 0;
+    final startDate = DateTime.parse(start);
+    final endDate = end != null ? DateTime.parse(end) : DateTime.now();
+    return endDate.difference(startDate).inDays;
   }
 
   // Generador de segmentos temporales para la UI
@@ -317,7 +362,30 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
     setState(() {
       _selectedTabIndex = index;
     });
-    // TODO (Backend): Refetch la información cuando se cambie la tab.
+  }
+
+  List<dynamic> get _filteredCycles {
+    if (_selectedTabIndex == 0) return _cycles;
+    
+    final now = DateTime.now();
+    if (_selectedTabIndex == 1) {
+      // Mes anterior
+      final prevMonth = now.month == 1 ? 12 : now.month - 1;
+      final year = now.month == 1 ? now.year - 1 : now.year;
+      return _cycles.where((c) {
+        if (c['start_date'] == null) return false;
+        final date = DateTime.parse(c['start_date']);
+        return date.month == prevMonth && date.year == year;
+      }).toList();
+    }
+    
+    if (_selectedTabIndex == 2) {
+      // Ventana Fertil (stylized: show cycles that had a fertile window overlap or just a placeholder)
+      // For now, let's just return all as a placeholder or filter by some logic
+      return _cycles; 
+    }
+    
+    return _cycles;
   }
 
   @override
@@ -400,24 +468,20 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
                     Expanded(
                       child: CycleStatCard(
                         icon: Icons.water_drop,
-                        iconColor: Colors.redAccent, // Blood drop icon color
+                        iconColor: Colors.redAccent,
                         title: 'Sangrado',
-                        subtitle: '3 days', // TODO (Backend): Mock parameter
-                        onTap: () {
-                          // TODO (Backend): Acción al presionar tarjeta "Sangrado"
-                        },
+                        subtitle: '${_prediction?['period_duration'] ?? _avgPeriodDuration} días',
+                        onTap: () {},
                       ),
                     ),
                     const SizedBox(width: 15),
                     Expanded(
                       child: CycleStatCard(
                         icon: Icons.calendar_month_outlined,
-                        iconColor: Colors.black87, // Calendar icon color
+                        iconColor: Colors.black87,
                         title: 'tu Ciclo',
-                        subtitle: '26 days', // TODO (Backend): Mock parameter
-                        onTap: () {
-                          // TODO (Backend): Acción al presionar tarjeta "tu Ciclo"
-                        },
+                        subtitle: '${_prediction?['avg_cycle_duration'] ?? _avgCycleDuration} días',
+                        onTap: () {},
                       ),
                     ),
                   ],
@@ -483,16 +547,50 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
                     color: Colors.white.withOpacity(0.9),
                     borderRadius: BorderRadius.circular(30),
                   ),
-                  child: ListView.separated(
+                  child: _isLoading 
+                    ? const Center(child: CircularProgressIndicator())
+                    : _cycles.isEmpty 
+                      ? const Center(child: Text("No hay ciclos registrados"))
+                      : ListView.separated(
                     padding: const EdgeInsets.only(top: 15, bottom: 25),
-                    physics: const BouncingScrollPhysics(), // Animación nativa fluida al scrollear
-                    itemCount: _mockData.length,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: _filteredCycles.length,
                     separatorBuilder: (context, index) => const SizedBox(height: 25),
                     itemBuilder: (context, index) {
-                      final item = _mockData[index];
-                      // Animación simple de Entrada
+                      final item = _filteredCycles[index];
+                      final start = item['start_date'];
+                      final end = item['end_date'];
+                        final days = _calculateDays(start, end);
+                      int durationToUse = end != null ? days : _avgCycleDuration;
+                      if (durationToUse < 1) durationToUse = _avgCycleDuration;
+                      
+                      // Phase Logic: 14 total segments
+                      const int totalSegments = 14;
+                      List<CycleSegmentStatus> segments = List.generate(totalSegments, (i) {
+                        double dayOfCycle = (i / (totalSegments - 1)) * durationToUse;
+                        
+                        // Menstruation phase
+                        if (dayOfCycle < _avgPeriodDuration) {
+                          return CycleSegmentStatus.period;
+                        }
+                        
+                        // Fertile window (approximately center of cycle)
+                        int ovulation = durationToUse - 14;
+                        if (dayOfCycle >= (ovulation - 5) && dayOfCycle <= (ovulation + 1)) {
+                          return CycleSegmentStatus.fertile;
+                        }
+                        
+                        return CycleSegmentStatus.future;
+                      });
+
+                      bool isCurrent = end == null;
+                      if (isCurrent) {
+                        int currentIndex = (days / _avgCycleDuration * totalSegments).floor().clamp(0, totalSegments - 1);
+                        segments[currentIndex] = CycleSegmentStatus.current;
+                      }
+
                       return TweenAnimationBuilder(
-                        duration: Duration(milliseconds: 300 + (index * 100)),
+                        duration: Duration(milliseconds: 300 + (index * 100).clamp(0, 1000)),
                         tween: Tween<double>(begin: 0, end: 1),
                         curve: Curves.easeOutCubic,
                         builder: (context, double opacity, child) {
@@ -505,11 +603,12 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
                           );
                         },
                         child: CycleHistoryListItem(
-                          dateRange: item.dateRange,
-                          daysCount: item.daysCount,
-                          segments: item.segments,
+                          dateRange: _formatDateRange(start, end),
+                          daysCount: days,
+                          segments: segments,
+                          isCurrentCycle: isCurrent,
                           onTap: () {
-                            // TODO (Backend): Acción al presionar un ciclo particular
+                            // Detail view?
                           },
                         ),
                       );

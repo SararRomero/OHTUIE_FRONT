@@ -209,14 +209,25 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
         itemBuilder: (context, index) {
           final cycle = list[index];
           final start = DateTime.parse(cycle['start_date']);
-          final end = cycle['end_date'] != null ? DateTime.parse(cycle['end_date']) : null;
           
-          int duration = 0;
-          if (end != null) {
-            duration = end.difference(start).inDays + 1;
-          } else {
-            duration = DateTime.now().difference(start).inDays + 1;
+          // Period end (actual bleeding)
+          final periodEnd = cycle['end_date'] != null ? DateTime.parse(cycle['end_date']) : null;
+          final int bleedingDuration = periodEnd != null ? periodEnd.difference(start).inDays + 1 : 0;
+          
+          // Full Cycle Logic: find the next (newer) cycle's start date to determine the end of this cycle
+          DateTime? fullCycleEnd;
+          if (index > 0) {
+            // list is ordered desc (recent first), so list[index-1] started AFTER list[index]
+            final nextCycleStart = DateTime.parse(list[index - 1]['start_date']);
+            fullCycleEnd = nextCycleStart.subtract(const Duration(days: 1));
+          } else if (cycle['end_date'] != null) {
+             // If it's the most recent but has an end date (not current), we might need a better way
+             // or just use avg cycle as reference. Usually end_date null = current.
           }
+
+          final int fullCycleDays = fullCycleEnd != null 
+              ? fullCycleEnd.difference(start).inDays + 1 
+              : DateTime.now().difference(start).inDays + 1;
 
           return TweenAnimationBuilder(
             duration: Duration(milliseconds: 400 + (index * 100)),
@@ -229,10 +240,12 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
               ),
             ),
             child: _buildCycleHistoryItem(
-              dateRange: _formatDateRange(start, end),
-              duration: duration,
-              bleedingDays: _stats['period_duration'] ?? 5,
-              onTap: () => _showCycleDetailModal(context, duration, _stats['period_duration'] ?? 5)
+              dateRange: _formatDateRange(start, fullCycleEnd),
+              fullDuration: fullCycleDays,
+              bleedingDays: bleedingDuration > 0 ? bleedingDuration : (_stats['period_duration'] ?? 5),
+              isCurrent: cycle['end_date'] == null,
+              startDate: start,
+              onTap: () => _showCycleDetailModal(context, fullCycleDays, bleedingDuration > 0 ? bleedingDuration : (_stats['period_duration'] ?? 5))
             ),
           );
         },
@@ -290,38 +303,64 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
     );
   }
 
-  Widget _buildCycleHistoryItem({required String dateRange, required int duration, required int bleedingDays, required VoidCallback onTap}) {
+  Widget _buildCycleHistoryItem({
+    required String dateRange, 
+    required int fullDuration, 
+    required int bleedingDays, 
+    required VoidCallback onTap,
+    required DateTime startDate,
+    bool isCurrent = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              dateRange,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isCurrent)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4.0),
+                    child: Text(
+                      "Ciclo Actual",
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF81A4FF),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                Text(
+                  dateRange,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+                ),
+              ],
             ),
             GestureDetector(
               onTap: onTap,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: ShapeDecoration(
                   color: const Color(0xFFF5F6FF), 
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF81A4FF).withOpacity(0.2)),
-                  boxShadow: [
+                  shape: StadiumBorder(
+                    side: BorderSide(color: const Color(0xFF81A4FF).withOpacity(0.2))
+                  ),
+                  shadows: [
                     BoxShadow(color: const Color(0xFF81A4FF).withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
                   ]
                 ),
                 child: Row(
                   children: [
                     Text(
-                      "$duration días",
+                      "$bleedingDays días",
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF81A4FF)),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(Icons.touch_app_rounded, size: 14, color: Color(0xFF81A4FF))
+                    const Icon(Icons.water_drop_rounded, size: 14, color: Color(0xFF81A4FF))
                   ],
                 ),
               ),
@@ -329,39 +368,71 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
           ],
         ),
         const SizedBox(height: 18),
-        _buildCycleVisualBar(bleedingDays: bleedingDays),
+        _buildCycleVisualBar(
+          bleedingDays: bleedingDays, 
+          totalDays: fullDuration, 
+          isCurrent: isCurrent,
+          startDate: startDate,
+        ),
       ],
     );
   }
 
-  Widget _buildCycleVisualBar({required int bleedingDays}) {
+  Widget _buildCycleVisualBar({
+    required int bleedingDays, 
+    required int totalDays, 
+    required DateTime startDate,
+    bool isCurrent = false,
+  }) {
     const int totalSegments = 16;
-    int dotIndex = (bleedingDays * 0.8).round().clamp(1, totalSegments - 2);
+    
+    // Average durations for relative phases
+    final int avgCycle = _stats['avg_cycle_duration'] ?? 28;
+    final int effectiveDuration = isCurrent ? avgCycle : totalDays;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: List.generate(totalSegments, (index) {
-        if (index == dotIndex) {
-          return Container(
-            width: 14,
-            height: 14,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFF85A1),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2.5),
-              boxShadow: [
-                BoxShadow(color: const Color(0xFFFF85A1).withOpacity(0.4), blurRadius: 6, spreadRadius: 1),
-              ],
-            ),
-          );
+        double dayOfCycle = (index / (totalSegments - 1)) * effectiveDuration;
+
+        // Colors
+        final Color periodColor = const Color(0xFFEBD8F5); // Morado para el periodo
+        final Color fertileColor = const Color(0xFFCCEAFF); // Azul para ventana fértil
+        final Color normalColor = const Color(0xFFF5F5F5); // Gris claro
+        final Color dotColor = const Color(0xFFFF85A1); // Punto indicador (Rosado fuerte)
+
+        // Determine phase
+        bool isPeriod = dayOfCycle < bleedingDays;
+        
+        int ovulation = effectiveDuration - 14;
+        bool isFertile = dayOfCycle >= (ovulation - 5) && dayOfCycle <= (ovulation + 1);
+
+        // Current indicator
+        if (isCurrent) {
+          int currentIndex = ((DateTime.now().difference(startDate).inDays) / avgCycle * totalSegments).floor().clamp(0, totalSegments - 1);
+          if (index == currentIndex) {
+            return Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: dotColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2.5),
+                boxShadow: [
+                  BoxShadow(color: dotColor.withOpacity(0.4), blurRadius: 6, spreadRadius: 1),
+                ],
+              ),
+            );
+          }
         }
 
-        bool isBeforeDot = index < dotIndex;
+        Color segmentColor = isPeriod ? periodColor : (isFertile ? fertileColor : normalColor);
+
         return Container(
           width: 12,
-          height: 5,
+          height: 6,
           decoration: BoxDecoration(
-            color: isBeforeDot ? const Color(0xFFFFB2C1) : const Color(0xFFF5F5F5),
+            color: segmentColor,
             borderRadius: BorderRadius.circular(3),
           ),
         );
