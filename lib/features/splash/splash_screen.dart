@@ -4,7 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../auth/sign_up_screen.dart';
 import '../auth/auth_service.dart';
 import '../home/user_home_screen.dart';
-import '../admin/admin_dashboard_screen.dart';
+import '../admin/presentation/screens/admin_dashboard_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
