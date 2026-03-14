@@ -12,6 +12,7 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
   bool _isWeekly = true;
   int _selectedIndex = -1;
   int _currentMonthIndex = 2; // Default to March (0-indexed 2)
+  int _currentWeekOffset = 0;
   late AnimationController _chartController;
   late Animation<double> _chartAnimation;
 
@@ -129,6 +130,15 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
     _chartController.forward();
   }
 
+  void _changeWeek(int delta) {
+    setState(() {
+      _currentWeekOffset += delta;
+      _selectedIndex = -1;
+    });
+    _chartController.reset();
+    _chartController.forward();
+  }
+
   Color _getPrimaryColor() {
     if (_isWeekly) return const Color(0xFFBDD4FF);
     return _monthColors[_currentMonthIndex % _monthColors.length];
@@ -240,13 +250,15 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
             alignment: Alignment.centerLeft,
             child: IconButton(
               onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.chevron_left, color: Colors.black, size: 28),
+              icon: const Icon(Icons.chevron_left, color: Colors.black, size: 26),
               style: IconButton.styleFrom(
                 backgroundColor: Colors.white,
+                padding: const EdgeInsets.all(12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: const BorderSide(color: Color(0xFFF5F5F5)),
+                  borderRadius: BorderRadius.circular(14),
+                  side: const BorderSide(color: Color(0xFFF5F5F5), width: 1.5),
                 ),
+                elevation: 0,
               ),
             ),
           ),
@@ -268,22 +280,41 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(30), // Pill shape
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
+      child: Stack(
         children: [
-          Expanded(
-            child: _buildSelectorButton("Semanal", _isWeekly, () => _toggleView(true)),
+          // Animated background for the selector
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            left: _isWeekly ? 0 : (MediaQuery.of(context).size.width - 48 - 8) / 2,
+            width: (MediaQuery.of(context).size.width - 48 - 8) / 2,
+            top: 0,
+            bottom: 0,
+            child: Container(
+              decoration: BoxDecoration(
+                color: _getPrimaryColor(),
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
           ),
-          Expanded(
-            child: _buildSelectorButton("Mensual", !_isWeekly, () => _toggleView(false)),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSelectorButton("Semanal", _isWeekly, () => _toggleView(true)),
+              ),
+              Expanded(
+                child: _buildSelectorButton("Mensual", !_isWeekly, () => _toggleView(false)),
+              ),
+            ],
           ),
         ],
       ),
@@ -291,23 +322,20 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
   }
 
   Widget _buildSelectorButton(String text, bool active, VoidCallback onTap) {
-    final activeColor = _getPrimaryColor();
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: active ? activeColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         child: Center(
-          child: Text(
-            text,
+          child: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 300),
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: active ? Colors.white : Colors.grey[600],
+              fontWeight: FontWeight.w700,
+              color: active ? Colors.white : Colors.grey[400],
             ),
+            child: Text(text),
           ),
         ),
       ),
@@ -315,39 +343,59 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
   }
 
   Widget _buildDateRange() {
+    String dateText = "";
+    if (_isWeekly) {
+      // Calculate dynamic week range anchored to a specific date for UI demonstration
+      final baseDate = DateTime(2026, 3, 10).add(Duration(days: 7 * _currentWeekOffset));
+      final endDate = baseDate.add(const Duration(days: 6));
+      final startStr = "${baseDate.day} de ${_monthNames[baseDate.month - 1].substring(0, 3)}";
+      final endStr = "${endDate.day} de ${_monthNames[endDate.month - 1].substring(0, 3)}";
+      dateText = "$startStr - $endStr, ${baseDate.year}";
+    } else {
+      dateText = "${_monthNames[_currentMonthIndex]}, 2026";
+    }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton(
-          onPressed: () => _isWeekly ? null : _changeMonth(-1),
-          icon: Icon(Icons.chevron_left, color: Colors.grey[400]),
+          onPressed: () => _isWeekly ? _changeWeek(-1) : _changeMonth(-1),
+          icon: Icon(Icons.chevron_left, color: Colors.grey[400], size: 22),
+          splashRadius: 24,
         ),
-        const SizedBox(width: 5),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.02),
-                blurRadius: 5,
+        const SizedBox(width: 8),
+        Flexible(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                dateText,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
               ),
-            ],
-          ),
-          child: Text(
-            _isWeekly ? "10 de Mar - 16 de Mar, 2026" : "${_monthNames[_currentMonthIndex]}, 2026",
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
             ),
           ),
         ),
-        const SizedBox(width: 5),
+        const SizedBox(width: 8),
         IconButton(
-          onPressed: () => _isWeekly ? null : _changeMonth(1),
-          icon: Icon(Icons.chevron_right, color: Colors.grey[400]),
+          onPressed: () => _isWeekly ? _changeWeek(1) : _changeMonth(1),
+          icon: Icon(Icons.chevron_right, color: Colors.grey[400], size: 22),
+          splashRadius: 24,
         ),
       ],
     );
