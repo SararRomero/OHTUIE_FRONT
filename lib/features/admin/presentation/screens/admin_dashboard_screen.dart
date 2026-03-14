@@ -162,12 +162,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        body: Center(
-            child: CircularProgressIndicator(color: Color(0xFFFF4081))),
-      );
-    }
+    // The screen should render immediately, skeleton loaders/spinners 
+    // are handled individually by the cards and tabs based on _isLoading variables.
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6FF),
@@ -180,15 +176,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               TextStyle(color: Color(0xFF000000), fontWeight: FontWeight.bold),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.menu, color: Colors.black),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const AdminSettingsScreen()),
-              );
-            },
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0, top: 8.0, bottom: 8.0),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const AdminSettingsScreen()),
+                );
+              },
+              child: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.menu, color: Colors.black, size: 24),
+              ),
+            ),
           ),
         ],
         bottom: TabBar(
