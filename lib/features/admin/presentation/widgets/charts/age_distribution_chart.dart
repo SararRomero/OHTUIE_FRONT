@@ -17,7 +17,7 @@ class AgeDistributionChart extends StatelessWidget {
     }).toList();
 
     return Padding(
-      padding: const EdgeInsets.only(right: 20, left: 10, top: 10),
+      padding: const EdgeInsets.only(right: 20, left: 10, top: 10, bottom: 10),
       child: LineChart(
         LineChartData(
           gridData: const FlGridData(show: false),
@@ -30,8 +30,14 @@ class AgeDistributionChart extends StatelessWidget {
                   int idx = value.round();
                   if (idx >= 0 && idx < labels.length && (value - idx).abs() < 0.1) {
                     return Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(labels[idx], style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                      padding: const EdgeInsets.only(top: 12.0),
+                      child: Text(labels[idx], 
+                        style: const TextStyle(
+                          fontSize: 10, 
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w500,
+                        )
+                      ),
                     );
                   }
                   return const SizedBox.shrink();
@@ -45,13 +51,29 @@ class AgeDistributionChart extends StatelessWidget {
           borderData: FlBorderData(show: false),
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              tooltipRoundedRadius: 10,
-              getTooltipColor: (LineBarSpot touchedSpot) => Colors.orange.withOpacity(0.8),
+              tooltipRoundedRadius: 12,
+              tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              maxContentWidth: 150,
+              getTooltipColor: (LineBarSpot touchedSpot) => Colors.orange[800]!.withOpacity(0.95),
               getTooltipItems: (touchedSpots) {
                 return touchedSpots.map((spot) {
                   return LineTooltipItem(
-                    '${spot.y.toInt()} usuarias',
-                    const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    'Grupo: ${labels[spot.x.toInt()]}\n',
+                    const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.normal,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: '${spot.y.toInt()} usuarias',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   );
                 }).toList();
               },

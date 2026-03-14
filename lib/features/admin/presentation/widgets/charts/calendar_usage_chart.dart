@@ -50,13 +50,17 @@ class _CalendarUsageChartState extends State<CalendarUsageChart>
   Widget build(BuildContext context) {
     final dataMap = widget.usageData ?? {};
     
-    // Generate dates for the last 7 days ending today
+    // Generate dates for the current week starting from Monday
     final now = DateTime.now();
+    // monday is 1, sunday is 7
+    final daysToSubtract = now.weekday - 1;
+    final monday = DateTime(now.year, now.month, now.day).subtract(Duration(days: daysToSubtract));
+    
     final List<double> rawData = [];
     final List<String> dayLabels = [];
 
-    for (int i = 6; i >= 0; i--) {
-      final date = now.subtract(Duration(days: i));
+    for (int i = 0; i < 7; i++) {
+      final date = monday.add(Duration(days: i));
       final dateStr =
           "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
 

@@ -93,9 +93,10 @@ class _RetentionChartState extends State<RetentionChart> {
           color: Colors.blue[300],
           value: active,
           title: '${active.toInt()}',
-          radius: touchedIndex == 0 ? 50.0 : 40.0,
+          radius: touchedIndex == 0 ? 55.0 : 45.0,
+          titlePositionPercentageOffset: 0.6,
           titleStyle: TextStyle(
-            fontSize: touchedIndex == 0 ? 16.0 : 12.0,
+            fontSize: touchedIndex == 0 ? 18.0 : 14.0,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
@@ -105,9 +106,10 @@ class _RetentionChartState extends State<RetentionChart> {
           color: Colors.orange[300],
           value: blocked,
           title: '${blocked.toInt()}',
-          radius: touchedIndex == 1 ? 50.0 : 40.0,
+          radius: touchedIndex == 1 ? 55.0 : 45.0,
+          titlePositionPercentageOffset: 0.6,
           titleStyle: TextStyle(
-            fontSize: touchedIndex == 1 ? 16.0 : 12.0,
+            fontSize: touchedIndex == 1 ? 18.0 : 14.0,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
@@ -117,9 +119,10 @@ class _RetentionChartState extends State<RetentionChart> {
           color: Colors.pink[300],
           value: deleted,
           title: '${deleted.toInt()}',
-          radius: touchedIndex == 2 ? 50.0 : 40.0,
+          radius: touchedIndex == 2 ? 55.0 : 45.0,
+          titlePositionPercentageOffset: 0.6,
           titleStyle: TextStyle(
-            fontSize: touchedIndex == 2 ? 16.0 : 12.0,
+            fontSize: touchedIndex == 2 ? 18.0 : 14.0,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
@@ -129,7 +132,7 @@ class _RetentionChartState extends State<RetentionChart> {
           color: Colors.transparent,
           value: emptyHalf,
           title: '',
-          radius: 40,
+          radius: 45,
        ),
     ];
   }
@@ -146,23 +149,34 @@ class _RetentionChartState extends State<RetentionChart> {
           angle: angle,
           alignment: Alignment.bottomCenter,
           child: Container(
-            width: 4,
-            height: 48, // Length of the needle
-            decoration: const BoxDecoration(
-              color: Colors.black87,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(2),
-                topRight: Radius.circular(2),
+            width: 3, // Slightly thinner needle
+            height: 52, // Slightly longer needle
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [Colors.black87, Colors.black.withOpacity(0.6)],
+              ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(3),
+                topRight: Radius.circular(3),
               )
             ),
           ),
         ),
         Container(
-          width: 20,
-          height: 20,
+          width: 14, // Smaller center circle for a cleaner look
+          height: 14,
           decoration: const BoxDecoration(
             color: Colors.black87,
             shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 4,
+                spreadRadius: 1,
+              )
+            ]
           ),
         ),
       ],
