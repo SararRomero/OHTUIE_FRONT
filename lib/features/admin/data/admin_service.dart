@@ -1,5 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:excel/excel.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 import '../../../core/network/api_client.dart';
 
 class AdminService {
@@ -153,6 +157,77 @@ class AdminService {
       }
     } catch (e) {
       return {"success": false, "message": "Connection error: $e"};
+    }
+  }
+
+  static Future<Map<String, dynamic>> exportUsersToExcel() async {
+    try {
+      // 1. Fetch all users
+      final result = await getUsers(page: 1, limit: 1000);
+      if (!result['success']) return result;
+
+      List users;
+      final rawData = result['data'];
+      
+      if (rawData is List) {
+        users = rawData;
+      } else if (rawData is Map) {
+        // If it's a map, try to find the list of users
+        // common keys: 'users', 'data', 'items'
+        users = (rawData['users'] ?? rawData['data'] ?? rawData['items'] ?? []) as List;
+      } else {
+        users = [];
+      }
+      
+      // 2. Create Excel
+      var excel = Excel.createExcel();
+      Sheet sheetObject = excel['Usuarios'];
+      excel.delete('Sheet1'); // Remove default sheet
+
+      // Add Headers
+      sheetObject.appendRow([
+        TextCellValue('Nombre Completo'),
+        TextCellValue('Email / Gmail'),
+      ]);
+
+      // Add Data
+      for (var user in users) {
+        sheetObject.appendRow([
+          TextCellValue(user['name'] ?? 'N/A'),
+          TextCellValue(user['email'] ?? 'N/A'),
+        ]);
+      }
+
+      // Add Total Count row
+      sheetObject.appendRow([]); // Empty row
+      sheetObject.appendRow([
+        TextCellValue('Total de Usuarios:'),
+        IntCellValue(users.length),
+      ]);
+
+      // 3. Save file
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = "${directory.path}/reporte_usuarios_${DateTime.now().millisecondsSinceEpoch}.xlsx";
+      final fileBytes = excel.save();
+      
+      if (fileBytes != null) {
+        File(filePath)
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(fileBytes);
+        
+        // 4. Open file
+        await OpenFilex.open(filePath);
+        
+        return {
+          "success": true, 
+          "message": "Reporte exportado exitosamente",
+          "path": filePath
+        };
+      } else {
+        return {"success": false, "message": "Error al generar el archivo Excel"};
+      }
+    } catch (e) {
+      return {"success": false, "message": "Error durante la exportación: $e"};
     }
   }
 }
