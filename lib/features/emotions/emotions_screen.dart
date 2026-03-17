@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+import '../home/symptoms/daily_log_service.dart';
+import 'package:intl/intl.dart';
 
 class EmotionsScreen extends StatefulWidget {
   const EmotionsScreen({super.key});
@@ -11,10 +13,18 @@ class EmotionsScreen extends StatefulWidget {
 class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProviderStateMixin {
   bool _isWeekly = true;
   int _selectedIndex = -1;
-  int _currentMonthIndex = 2; // Default to March (0-indexed 2)
+  late int _currentMonthIndex;
   int _currentWeekOffset = 0;
   late AnimationController _chartController;
   late Animation<double> _chartAnimation;
+
+  // Real Data
+  bool _isLoading = true;
+  Map<String, dynamic> _moodLibrary = {};
+  Map<String, dynamic> _stats = {
+    "predominant": "normal",
+    "daily": []
+  };
 
   final List<String> _monthNames = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -28,70 +38,10 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
     const Color(0xFFC3F0E3), // Mint
   ];
 
-  final List<double> _weeklyData = [0.4, 0.6, 0.5, 0.9, 0.7, 0.3, 0.2];
-  final List<double> _monthlyData = [0.5, 0.8, 0.4, 0.7]; // Only 4 weeks
-
-  // Mocked symptoms for each data point
-  final Map<int, List<String>> _weeklySymptoms = {
-    0: ["fatigue"],
-    1: ["aching_head"],
-    2: ["bloating"],
-    3: ["cramps", "aching_head"],
-    4: ["fatigue"],
-    5: ["add_weight"],
-    6: ["normal"],
-  };
-
-  final Map<int, List<String>> _monthlySymptoms = {
-    0: ["fatigue", "bloating"],
-    1: ["cramps", "fatigue"],
-    2: ["normal"],
-    3: ["aching_head", "fatigue"],
-  };
-
-  final Map<String, Map<String, String>> _symptomLibrary = {
-    "aching_head": {
-      "msg": "Mi niña, lamento que hoy tu cabecita te moleste. Eres fuerte y esto también pasará.",
-      "advice": "Trata de descansar en un lugar oscuro y fresco. Te quiero mucho.",
-      "tip": "Evita las pantallas y bebe mucha agua; la hidratación es clave para aliviar la presión.",
-      "label": "Dolor de cabeza"
-    },
-    // ... rest same ...
-    "add_weight": {
-      "msg": "Hermosa, tu cuerpo es perfecto tal como es. Estas variaciones son normales y no definen tu luz.",
-      "advice": "No seas dura contigo misma, abrázate hoy con mucha compasión.",
-      "tip": "La retención de líquidos es común; prueba infusiones de jengibre para sentirte más ligera.",
-      "label": "Aumento de peso"
-    },
-    "cramps": {
-      "msg": "Sé que esos cólicos son difíciles, bonita. Estoy aquí mandándote todo mi amor para que te sientas mejor.",
-      "advice": "Una compresa tibia en tu vientre te dará ese apapacho que necesitas ahora.",
-      "tip": "Estiramientos suaves de yoga pueden ayudar a relajar los músculos del útero.",
-      "label": "Cólicos"
-    },
-    "bloating": {
-      "msg": "Sentirse hinchada es incómodo, pero recuerda que es solo tu cuerpo procesando sus ciclos naturales.",
-      "advice": "Usa ropa cómoda que te haga sentir libre y sin presiones.",
-      "tip": "Evita la sal estos días; opta por alimentos ricos en potasio como el plátano.",
-      "label": "Hinchazón"
-    },
-    "fatigue": {
-      "msg": "Si hoy te sientes sin fuerzas, está bien descansar. No tienes que poder con todo siempre, valiente.",
-      "advice": "Permítete una siesta corta, tu cuerpo te lo está pidiendo con amor.",
-      "tip": "El magnesio y dormir 8 horas completas harán maravillas por tu energía mañana.",
-      "label": "Fatiga"
-    },
-    "normal": {
-      "msg": "Cada emoción es un mensaje de tu corazón, bonita. Escúchala con amor y paciencia.",
-      "advice": "Sigue cuidándote así de bien, te lo mereces todo.",
-      "tip": "Mantén tu rutina de autocuidado, ¡lo estás haciendo genial!",
-      "label": "Tranquila"
-    }
-  };
-
   @override
   void initState() {
     super.initState();
+    _currentMonthIndex = DateTime.now().month - 1;
     _chartController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
@@ -100,7 +50,48 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
       parent: _chartController,
       curve: Curves.easeOutQuart,
     );
-    _chartController.forward();
+    
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    setState(() => _isLoading = true);
+    final libResult = await DailyLogService.getMoodLibrary();
+    if (libResult['success']) {
+      _moodLibrary = libResult['data'];
+    }
+    await _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    setState(() => _isLoading = true);
+    
+    DateTime start, end;
+    if (_isWeekly) {
+      // Current week range
+      final now = DateTime.now();
+      final baseDate = now.add(Duration(days: 7 * _currentWeekOffset));
+      start = baseDate.subtract(Duration(days: baseDate.weekday - 1));
+      end = start.add(const Duration(days: 6));
+    } else {
+      // Current month range
+      final year = DateTime.now().year;
+      start = DateTime(year, _currentMonthIndex + 1, 1);
+      end = DateTime(year, _currentMonthIndex + 2, 0); // Last day of month
+    }
+
+    final statsResult = await DailyLogService.getMoodStats(start, end);
+    if (mounted) {
+      setState(() {
+        if (statsResult['success']) {
+          _stats = statsResult['data'];
+        }
+        _isLoading = false;
+        _selectedIndex = -1;
+      });
+      _chartController.reset();
+      _chartController.forward();
+    }
   }
 
   @override
@@ -113,35 +104,58 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
     if (_isWeekly != weekly) {
       setState(() {
         _isWeekly = weekly;
-        _selectedIndex = -1;
       });
-      _chartController.reset();
-      _chartController.forward();
+      _loadStats();
     }
   }
 
   void _changeMonth(int delta) {
-    setState(() {
-      _currentMonthIndex = (_currentMonthIndex + delta) % 12;
-      if (_currentMonthIndex < 0) _currentMonthIndex = 11;
-      _selectedIndex = -1;
-    });
-    _chartController.reset();
-    _chartController.forward();
+    int newIndex = _currentMonthIndex + delta;
+    if (newIndex >= 0 && newIndex < DateTime.now().month) {
+      setState(() {
+        _currentMonthIndex = newIndex;
+      });
+      _loadStats();
+    }
   }
 
   void _changeWeek(int delta) {
-    setState(() {
-      _currentWeekOffset += delta;
-      _selectedIndex = -1;
-    });
-    _chartController.reset();
-    _chartController.forward();
+    int newOffset = _currentWeekOffset + delta;
+    final now = DateTime.now();
+    // Cannot go to future weeks (offset > 0)
+    if (newOffset > 0) return;
+
+    // Check if new week is in current year
+    final baseDate = now.add(Duration(days: 7 * newOffset));
+    final start = baseDate.subtract(Duration(days: baseDate.weekday - 1));
+    
+    if (start.year == now.year) {
+      setState(() {
+        _currentWeekOffset = newOffset;
+      });
+      _loadStats();
+    }
+  }
+
+  bool get _canMoveNextMonth => _currentMonthIndex < DateTime.now().month - 1;
+  bool get _canMovePrevMonth => _currentMonthIndex > 0;
+  
+  bool get _canMoveNextWeek => _currentWeekOffset < 0;
+  bool get _canMovePrevWeek {
+    final now = DateTime.now();
+    final baseDate = now.add(Duration(days: 7 * (_currentWeekOffset - 1)));
+    final start = baseDate.subtract(Duration(days: baseDate.weekday - 1));
+    return start.year == now.year;
   }
 
   Color _getPrimaryColor() {
     if (_isWeekly) return const Color(0xFFBDD4FF);
     return _monthColors[_currentMonthIndex % _monthColors.length];
+  }
+
+  bool get _hasData {
+    final List<dynamic> daily = _stats['daily'] ?? [];
+    return daily.any((day) => (day['moods'] as List).isNotEmpty);
   }
 
   @override
@@ -162,27 +176,33 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
             children: [
               _buildHeader(),
               Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center, // Better balance
-                    children: [
-                      _buildSelector(),
-                      const SizedBox(height: 30),
-                      _buildDateRange(),
-                      const SizedBox(height: 30),
-                      _buildChartContainer(),
-                      const SizedBox(height: 30), // Maintain clear distance
-                      _buildPredominantEmotionCard(),
-                      const SizedBox(height: 30),
-                      _buildDailyAdviceCard(),
-                      const SizedBox(height: 30),
-                      _buildAdviceCard(),
-                      const SizedBox(height: 30),
-                      _buildHealthyTipsCard(),
-                      const SizedBox(height: 40),
-                    ],
+                child: RefreshIndicator(
+                  onRefresh: _loadStats,
+                  color: const Color(0xFFFF85A1),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _buildSelector(),
+                        const SizedBox(height: 30),
+                        _buildDateRange(),
+                        const SizedBox(height: 30),
+                        _buildChartContainer(),
+                        if (_hasData) ...[
+                          const SizedBox(height: 30),
+                          _buildPredominantEmotionCard(),
+                          const SizedBox(height: 30),
+                          _buildDailyAdviceCard(),
+                          const SizedBox(height: 30),
+                          _buildAdviceCard(),
+                          const SizedBox(height: 30),
+                          _buildHealthyTipsCard(),
+                        ],
+                        const SizedBox(height: 40),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -194,6 +214,9 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
   }
 
   Widget _buildPredominantEmotionCard() {
+    final predKey = _stats['predominant'] ?? 'normal';
+    final moodData = _moodLibrary[predKey] ?? {'label': 'Tranquila', 'icon': 'favorite'};
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -226,18 +249,33 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Sentimiento predominante",
+                "Sentimiento destacado",
                 style: TextStyle(fontSize: 13, color: Colors.grey[500]),
               ),
-              const Text(
-                "Tranquilidad y Calma",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+              Text(
+                moodData['label'] ?? "Tranquilidad y Calma",
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  IconData _getIconData(String? iconName) {
+    switch (iconName) {
+      case 'headset_off': return Icons.headset_off;
+      case 'monitor_weight': return Icons.monitor_weight_outlined;
+      case 'water_drop': return Icons.water_drop_rounded;
+      case 'bubble_chart': return Icons.bubble_chart_outlined;
+      case 'battery_low': return Icons.battery_charging_full_rounded;
+      case 'sentiment_very_satisfied': return Icons.sentiment_very_satisfied;
+      case 'sentiment_very_dissatisfied': return Icons.sentiment_very_dissatisfied;
+      case 'self_improvement': return Icons.self_improvement;
+      case 'check_circle': return Icons.check_circle_outline;
+      default: return Icons.favorite;
+    }
   }
 
   Widget _buildHeader() {
@@ -280,7 +318,7 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(30), // Pill shape
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -291,7 +329,6 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
       ),
       child: Stack(
         children: [
-          // Animated background for the selector
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOutCubic,
@@ -345,22 +382,27 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
   Widget _buildDateRange() {
     String dateText = "";
     if (_isWeekly) {
-      // Calculate dynamic week range anchored to a specific date for UI demonstration
-      final baseDate = DateTime(2026, 3, 10).add(Duration(days: 7 * _currentWeekOffset));
-      final endDate = baseDate.add(const Duration(days: 6));
-      final startStr = "${baseDate.day} de ${_monthNames[baseDate.month - 1].substring(0, 3)}";
-      final endStr = "${endDate.day} de ${_monthNames[endDate.month - 1].substring(0, 3)}";
-      dateText = "$startStr - $endStr, ${baseDate.year}";
+      final now = DateTime.now();
+      final baseDate = now.add(Duration(days: 7 * _currentWeekOffset));
+      final start = baseDate.subtract(Duration(days: baseDate.weekday - 1));
+      final end = start.add(const Duration(days: 6));
+      
+      final startStr = DateFormat('d MMM', 'es').format(start);
+      final endStr = DateFormat('d MMM', 'es').format(end);
+      dateText = "$startStr - $endStr, ${start.year}";
     } else {
-      dateText = "${_monthNames[_currentMonthIndex]}, 2026";
+      dateText = "${_monthNames[_currentMonthIndex]}, ${DateTime.now().year}";
     }
+
+    final bool canPrev = _isWeekly ? _canMovePrevWeek : _canMovePrevMonth;
+    final bool canNext = _isWeekly ? _canMoveNextWeek : _canMoveNextMonth;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton(
-          onPressed: () => _isWeekly ? _changeWeek(-1) : _changeMonth(-1),
-          icon: Icon(Icons.chevron_left, color: Colors.grey[400], size: 22),
+          onPressed: canPrev ? () => _isWeekly ? _changeWeek(-1) : _changeMonth(-1) : null,
+          icon: Icon(Icons.chevron_left, color: canPrev ? Colors.grey[400] : Colors.grey[200], size: 22),
           splashRadius: 24,
         ),
         const SizedBox(width: 8),
@@ -393,8 +435,8 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
         ),
         const SizedBox(width: 8),
         IconButton(
-          onPressed: () => _isWeekly ? _changeWeek(1) : _changeMonth(1),
-          icon: Icon(Icons.chevron_right, color: Colors.grey[400], size: 22),
+          onPressed: canNext ? () => _isWeekly ? _changeWeek(1) : _changeMonth(1) : null,
+          icon: Icon(Icons.chevron_right, color: canNext ? Colors.grey[400] : Colors.grey[200], size: 22),
           splashRadius: 24,
         ),
       ],
@@ -403,6 +445,7 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
 
   Widget _buildChartContainer() {
     final primaryColor = _getPrimaryColor();
+    final List<dynamic> dailyData = _stats['daily'] ?? [];
 
     return Container(
       constraints: const BoxConstraints(minHeight: 320),
@@ -424,10 +467,12 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
         children: [
           SizedBox(
             height: 180,
-            child: _isWeekly ? _buildBarChart() : _buildLineChart(),
+            child: _isLoading 
+              ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF85A1)))
+              : (_isWeekly ? _buildBarChart(dailyData) : _buildLineChart(dailyData)),
           ),
           const SizedBox(height: 20),
-          if (_selectedIndex != -1)
+          if (_selectedIndex != -1 && dailyData.isNotEmpty && _selectedIndex < dailyData.length)
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -438,27 +483,26 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
                 children: [
                   Text(
                     _isWeekly 
-                      ? "Intensidad el ${_getDayName(_selectedIndex)}: ${(_weeklyData[_selectedIndex] * 100).toInt()}%"
-                      : "Intensidad Semana ${_selectedIndex + 1}: ${(_monthlyData[_selectedIndex] * 100).toInt()}%",
+                      ? "Intensidad el ${_getDayName(dailyData[_selectedIndex]['date'])}: ${(dailyData[_selectedIndex]['intensity'] * 100).toInt()}%"
+                      : "Semana ${_selectedIndex + 1}: ${(dailyData[_selectedIndex]['intensity'] * 100).toInt()}%",
                     style: TextStyle(color: primaryColor.withOpacity(0.8), fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                   const SizedBox(height: 6),
                   Builder(builder: (context) {
-                    final index = _selectedIndex;
-                    final symptoms = _isWeekly ? _weeklySymptoms[index] : _monthlySymptoms[index];
-                    if (symptoms != null) {
+                    final List moods = dailyData[_selectedIndex]['moods'] ?? [];
+                    if (moods.isNotEmpty) {
                       return Text(
-                        "Síntomas: ${symptoms.map((id) => _symptomLibrary[id]?['label'] ?? id).join(', ')}",
+                        "Ánimos: ${moods.map((m) => _moodLibrary[m]?['label'] ?? m).join(', ')}",
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Colors.grey[600], fontSize: 12, fontWeight: FontWeight.w500),
                       );
                     }
-                    return const SizedBox.shrink();
+                    return const Text("Sin registros este día", style: TextStyle(fontSize: 12, color: Colors.grey));
                   }),
                 ],
               ),
             )
-          else
+          else if (!_isLoading)
             Text(
               _isWeekly ? "Toca una barra para ver detalles" : "Toca un punto para ver detalles",
               style: TextStyle(color: Colors.grey[400], fontSize: 12, fontStyle: FontStyle.italic),
@@ -468,8 +512,22 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildBarChart() {
+  String _getDayName(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      return DateFormat('EEEE', 'es').format(date);
+    } catch (_) {
+      return "Día";
+    }
+  }
+
+  Widget _buildBarChart(List<dynamic> dailyData) {
     final primaryColor = _getPrimaryColor();
+    // In weekly mode, we expect exactly 7 days. If not, we pad
+    List<double> values = List.generate(7, (i) => 0.0);
+    for (var i = 0; i < dailyData.length && i < 7; i++) {
+       values[i] = (dailyData[i]['intensity'] as num).toDouble();
+    }
 
     return AnimatedBuilder(
       animation: _chartAnimation,
@@ -477,7 +535,7 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           crossAxisAlignment: CrossAxisAlignment.end,
-          children: _weeklyData.asMap().entries.map((entry) {
+          children: values.asMap().entries.map((entry) {
             final index = entry.key;
             final value = entry.value;
             final isSelected = _selectedIndex == index;
@@ -490,7 +548,7 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
                 children: [
                   Container(
                     width: 32,
-                    height: 160 * value * _chartAnimation.value,
+                    height: (160 * value * _chartAnimation.value).clamp(4.0, 160.0),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.bottomCenter,
@@ -534,8 +592,27 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildLineChart() {
+  Widget _buildLineChart(List<dynamic> dailyData) {
     final primaryColor = _getPrimaryColor();
+    // In monthly mode, dailyData might be long. We compress it into 4 points (weeks)
+    // For now, let's just take the first 4 if they exist, or average them.
+    List<double> points = [0.1, 0.1, 0.1, 0.1];
+    if (dailyData.isNotEmpty) {
+       int chunkSize = (dailyData.length / 4).ceil();
+       for (int i = 0; i < 4; i++) {
+          int start = i * chunkSize;
+          int end = (i + 1) * chunkSize;
+          if (start < dailyData.length) {
+             double sum = 0;
+             int count = 0;
+             for (int j = start; j < end && j < dailyData.length; j++) {
+                sum += (dailyData[j]['intensity'] as num).toDouble();
+                count++;
+             }
+             points[i] = sum / count;
+          }
+       }
+    }
 
     return Column(
       children: [
@@ -547,7 +624,7 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
                   CustomPaint(
                     size: Size(constraints.maxWidth, constraints.maxHeight),
                     painter: LineChartPainter(
-                      data: _monthlyData,
+                      data: points,
                       animationValue: _chartAnimation.value,
                       primaryColor: primaryColor,
                       selectedIndex: _selectedIndex,
@@ -587,18 +664,34 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
     );
   }
 
-  String _getDayName(int index) {
-    return ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"][index];
+  Map<String, dynamic> _getSelectedMoodData() {
+    String moodKey = _stats['predominant'] ?? 'normal';
+    final List<dynamic> daily = _stats['daily'] ?? [];
+    
+    if (_selectedIndex != -1 && daily.isNotEmpty) {
+      if (_isWeekly && _selectedIndex < daily.length) {
+         final List moods = daily[_selectedIndex]['moods'] ?? [];
+         if (moods.isNotEmpty) moodKey = moods.first;
+      } else if (!_isWeekly) {
+         // Monthly logic - could find predominant of that week, but for now use first
+         int chunkSize = (daily.length / 4).ceil();
+         int start = _selectedIndex * chunkSize;
+         if (start < daily.length) {
+            final List moods = daily[start]['moods'] ?? [];
+            if (moods.isNotEmpty) moodKey = moods.first;
+         }
+      }
+    }
+    return _moodLibrary[moodKey] ?? _moodLibrary['normal'] ?? {
+      'label': 'Normal',
+      'msg': 'Sigue cuidándote así de bien, preciosa.',
+      'advice': 'Disfruta tu día hoy.',
+      'tip': 'Bebe agua y descansa.'
+    };
   }
 
   Widget _buildDailyAdviceCard() {
-    String symptomId = "normal";
-    if (_selectedIndex != -1) {
-      final symptoms = _isWeekly ? _weeklySymptoms[_selectedIndex] : _monthlySymptoms[_selectedIndex];
-      if (symptoms != null && symptoms.isNotEmpty) symptomId = symptoms.first;
-    }
-    final symptomData = _symptomLibrary[symptomId] ?? _symptomLibrary["normal"]!;
-
+    final data = _getSelectedMoodData();
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -627,19 +720,12 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
               children: [
                 const Text(
                   "Consejo del día",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  symptomData["advice"]!,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                  ),
+                  data['advice'] ?? "Mímate mucho hoy.",
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
                 ),
               ],
             ),
@@ -650,23 +736,13 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
   }
 
   Widget _buildAdviceCard() {
-    String symptomId = "normal";
-    if (_selectedIndex != -1) {
-      final symptoms = _isWeekly ? _weeklySymptoms[_selectedIndex] : _monthlySymptoms[_selectedIndex];
-      if (symptoms != null && symptoms.isNotEmpty) symptomId = symptoms.first;
-    }
-    final symptomData = _symptomLibrary[symptomId] ?? _symptomLibrary["normal"]!;
-
+    final data = _getSelectedMoodData();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           "Acerca de tus emociones",
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
         ),
         const SizedBox(height: 16),
         Container(
@@ -688,25 +764,16 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
             children: [
               Text(
                 "¡Hola, bonita!",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey[800],
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, color: Colors.grey[800], fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
-                symptomData["msg"]!,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[700],
-                  height: 1.5,
-                  fontWeight: FontWeight.w500,
-                ),
+                data['msg'] ?? "Cada emoción es un mensaje de tu corazón.",
+                style: TextStyle(fontSize: 16, color: Colors.grey[700], height: 1.5, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 20),
               Text(
-                "Recuerda que cada emoción es válida y necesaria. Escuchar a tu cuerpo y a tu mente es el acto de amor más grande.",
+                "Recuerda que cada emoción es válida y necesaria. Escuchar a tu cuerpo y a tu mente es el acto de amor más grande que puedes hacer por ti. Sigue cuidándote así de bien, ¡te lo mereces todo!",
                 style: TextStyle(
                   fontSize: 15,
                   color: Colors.grey[500],
@@ -721,23 +788,13 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
   }
 
   Widget _buildHealthyTipsCard() {
-    String symptomId = "normal";
-    if (_selectedIndex != -1) {
-      final symptoms = _isWeekly ? _weeklySymptoms[_selectedIndex] : _monthlySymptoms[_selectedIndex];
-      if (symptoms != null && symptoms.isNotEmpty) symptomId = symptoms.first;
-    }
-    final symptomData = _symptomLibrary[symptomId] ?? _symptomLibrary["normal"]!;
-
+    final data = _getSelectedMoodData();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           "Tips Saludables",
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
         ),
         const SizedBox(height: 16),
         Container(
@@ -754,12 +811,8 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
-                  symptomData["tip"]!,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.grey[700],
-                    height: 1.5,
-                  ),
+                  data['tip'] ?? "Mantén tu rutina de autocuidado.",
+                  style: TextStyle(fontSize: 15, color: Colors.grey[700], height: 1.5),
                 ),
               ),
             ],
@@ -787,7 +840,7 @@ class LineChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (data.isEmpty) return;
 
-    final double padding = 20.0;
+    const double padding = 20.0;
     final double graphWidth = size.width - (padding * 2);
     final double graphHeight = size.height - (padding * 2);
     final double stepX = graphWidth / (data.length - 1);
@@ -803,37 +856,32 @@ class LineChartPainter extends CustomPainter {
     path.moveTo(points[0].dx, points[0].dy);
     
     for (int i = 0; i < points.length - 1; i++) {
-      final p1 = points[i];
-      final p2 = points[i + 1];
-      final cp1 = Offset(p1.dx + (p2.dx - p1.dx) / 3, p1.dy);
-      final cp2 = Offset(p1.dx + 2 * (p2.dx - p1.dx) / 3, p2.dy);
-      path.cubicTo(cp1.dx, cp1.dy, cp2.dx, cp1.dy, p2.dx, p2.dy);
+        final p1 = points[i];
+        final p2 = points[i + 1];
+        final cp1 = Offset(p1.dx + (p2.dx - p1.dx) / 3, p1.dy);
+        final cp2 = Offset(p1.dx + 2 * (p2.dx - p1.dx) / 3, p2.dy);
+        path.cubicTo(cp1.dx, cp1.dy, cp2.dx, cp1.dy, p2.dx, p2.dy);
     }
 
-    // Gradient Fill
     final fillPath = Path.from(path)
       ..lineTo(points.last.dx, size.height)
       ..lineTo(points.first.dx, size.height)
       ..close();
 
     canvas.drawPath(fillPath, Paint()..shader = ui.Gradient.linear(
-      Offset(0, padding), Offset(0, size.height),
+      const Offset(0, padding), Offset(0, size.height),
       [primaryColor.withOpacity(0.3), Colors.white.withOpacity(0.0)],
     ));
 
-    // Smooth Line
     canvas.drawPath(path, Paint()
       ..color = primaryColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4.0
       ..strokeCap = StrokeCap.round);
 
-    // Points
     for (int i = 0; i < points.length; i++) {
-      final isSelected = selectedIndex == i;
-      if (isSelected) {
+      if (selectedIndex == i) {
         canvas.drawCircle(points[i], 12, Paint()..color = primaryColor.withOpacity(0.2));
-        canvas.drawCircle(points[i], 8, Paint()..color = primaryColor.withOpacity(0.1));
       }
       canvas.drawCircle(points[i], 6, Paint()..color = primaryColor);
       canvas.drawCircle(points[i], 3, Paint()..color = Colors.white);

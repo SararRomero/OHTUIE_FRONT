@@ -114,6 +114,7 @@ class CycleHistoryListItem extends StatelessWidget {
   final List<CycleSegmentStatus> segments;
   final VoidCallback onTap;
   final bool isCurrentCycle;
+  final VoidCallback onDelete;
 
   const CycleHistoryListItem({
     Key? key,
@@ -121,6 +122,7 @@ class CycleHistoryListItem extends StatelessWidget {
     required this.daysCount,
     required this.segments,
     required this.onTap,
+    required this.onDelete,
     this.isCurrentCycle = false,
   }) : super(key: key);
 
@@ -161,12 +163,38 @@ class CycleHistoryListItem extends StatelessWidget {
                   ),
                 ],
               ),
-              Text(
-                daysCount.toString(),
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.black87,
-                ),
+              Row(
+                children: [
+                  Text(
+                    daysCount.toString(),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, size: 18, color: Colors.grey),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onSelected: (value) {
+                      if (value == 'delete') {
+                        onDelete();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+                            SizedBox(width: 8),
+                            Text('Eliminar', style: TextStyle(color: Colors.redAccent)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
@@ -328,10 +356,78 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
     }
   }
 
+  Future<void> _deleteCycle(String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar Ciclo'),
+        content: const Text('¿Estás seguro de que deseas eliminar este ciclo? Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() => _isLoading = true);
+      final resp = await CycleHistoryService.deleteCycle(id);
+      if (resp['success']) {
+        await _loadData();
+      } else {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${resp['message']}')),
+        );
+      }
+    }
+  }
+
+  Future<void> _clearHistory() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Limpiar Historial'),
+        content: const Text('¿Estás seguro de que deseas borrar TODO el historial de ciclos? Esta acción es definitiva.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: const Text('Limpiar Todo'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() => _isLoading = true);
+      final resp = await CycleHistoryService.deleteAllCycles();
+      if (resp['success']) {
+        await _loadData();
+      } else {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${resp['message']}')),
+        );
+      }
+    }
+  }
+
   String _formatDateRange(String? start, String? end) {
     if (start == null) return "Fecha desconocida";
     final startDate = DateTime.parse(start);
-    final startStr = DateFormat('MMMM d', 'en').format(startDate); // Adjust locale if needed
+    final startStr = DateFormat('MMMM d', 'en').format(startDate); 
     
     if (end == null) {
       return "$startStr - Actualidad";
@@ -349,15 +445,6 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
     return endDate.difference(startDate).inDays;
   }
 
-  // Generador de segmentos temporales para la UI
-  List<CycleSegmentStatus> _createSegments(int past, int current, int future) {
-    List<CycleSegmentStatus> list = [];
-    for (int i = 0; i < past; i++) list.add(CycleSegmentStatus.past);
-    for (int i = 0; i < current; i++) list.add(CycleSegmentStatus.current);
-    for (int i = 0; i < future; i++) list.add(CycleSegmentStatus.future);
-    return list;
-  }
-
   void _onTabChanged(int index) {
     setState(() {
       _selectedTabIndex = index;
@@ -369,7 +456,6 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
     
     final now = DateTime.now();
     if (_selectedTabIndex == 1) {
-      // Mes anterior
       final prevMonth = now.month == 1 ? 12 : now.month - 1;
       final year = now.month == 1 ? now.year - 1 : now.year;
       return _cycles.where((c) {
@@ -380,8 +466,6 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
     }
     
     if (_selectedTabIndex == 2) {
-      // Ventana Fertil (stylized: show cycles that had a fertile window overlap or just a placeholder)
-      // For now, let's just return all as a placeholder or filter by some logic
       return _cycles; 
     }
     
@@ -394,32 +478,25 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        // Fondo con los colores dados aplicados como gradiente
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFFFF0F2), // Top
-              Color(0xFFFFE4EF), // Center
-              Color(0xFFEBD8F5), // Bottom
+              Color(0xFFFFF0F2), 
+              Color(0xFFFFE4EF), 
+              Color(0xFFEBD8F5), 
             ],
           ),
         ),
         child: SafeArea(
-          // Utilizamos un CustomScrollView en el futuro si hay mucha información vertical
-          // Por el momento un Column que encaja "Historial" en un listado expandido
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ==============================
-              // HEADER ROW (Back + Título)
-              // ==============================
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
                 child: Row(
                   children: [
-                    // Back button
                     GestureDetector(
                       onTap: () {
                         if (widget.onBack != null) {
@@ -452,15 +529,26 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 36), // Evitar desbalance visual del título
+                    GestureDetector(
+                      onTap: _clearHistory,
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.4),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.delete_sweep_outlined,
+                          size: 18,
+                          color: Colors.redAccent,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 10),
 
-              // ==============================
-              // TOP CARDS
-              // ==============================
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Row(
@@ -490,9 +578,6 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
 
               const SizedBox(height: 35),
 
-              // ==============================
-              // HISTORIAL TITLE
-              // ==============================
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.0),
                 child: Text(
@@ -506,9 +591,6 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
               ),
               const SizedBox(height: 15),
 
-              // ==============================
-              // TAB BAR
-              // ==============================
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 30.0),
                 child: Row(
@@ -522,7 +604,6 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                          // Blue si está seleccionado, Gris claro si no
                           color: isSelected 
                             ? const Color(0xFF90B0FF) 
                             : Colors.grey.withOpacity(0.6),
@@ -535,9 +616,6 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
               ),
               const SizedBox(height: 15),
 
-              // ==============================
-              // HISTORY LIST (White Container)
-              // ==============================
               Expanded(
                 child: Container(
                   width: double.infinity,
@@ -560,26 +638,20 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
                       final item = _filteredCycles[index];
                       final start = item['start_date'];
                       final end = item['end_date'];
-                        final days = _calculateDays(start, end);
+                      final days = _calculateDays(start, end);
                       int durationToUse = end != null ? days : _avgCycleDuration;
                       if (durationToUse < 1) durationToUse = _avgCycleDuration;
                       
-                      // Phase Logic: 14 total segments
                       const int totalSegments = 14;
                       List<CycleSegmentStatus> segments = List.generate(totalSegments, (i) {
                         double dayOfCycle = (i / (totalSegments - 1)) * durationToUse;
-                        
-                        // Menstruation phase
                         if (dayOfCycle < _avgPeriodDuration) {
                           return CycleSegmentStatus.period;
                         }
-                        
-                        // Fertile window (approximately center of cycle)
                         int ovulation = durationToUse - 14;
                         if (dayOfCycle >= (ovulation - 5) && dayOfCycle <= (ovulation + 1)) {
                           return CycleSegmentStatus.fertile;
                         }
-                        
                         return CycleSegmentStatus.future;
                       });
 
@@ -607,16 +679,15 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
                           daysCount: days,
                           segments: segments,
                           isCurrentCycle: isCurrent,
-                          onTap: () {
-                            // Detail view?
-                          },
+                          onDelete: () => _deleteCycle(item['id'].toString()),
+                          onTap: () {},
                         ),
                       );
                     },
                   ),
                 ),
               ),
-              const SizedBox(height: 20), // Bottom safe space
+              const SizedBox(height: 20),
             ],
           ),
         ),

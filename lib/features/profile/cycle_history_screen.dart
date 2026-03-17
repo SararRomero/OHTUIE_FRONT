@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'cycle_history_service.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 class CycleHistoryScreen extends StatefulWidget {
   const CycleHistoryScreen({super.key});
@@ -16,14 +17,19 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
   String _activeFilter = "Todo";
   final List<String> _filters = ["Todo", "Mes anterior", "5 últimos", "Actual"];
 
+  // Multi-selection state
+  bool _isSelectionMode = false;
+  final Set<String> _selectedIds = {};
+
   @override
   void initState() {
     super.initState();
-    _loadData();
+    initializeDateFormatting('es', null).then((_) {
+      _loadData();
+    });
   }
 
   Future<void> _loadData() async {
-    // If not empty, don't show full loading, just background load
     if (_cycles.isEmpty) {
        setState(() => _isLoading = true);
     }
@@ -46,14 +52,104 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
     }
   }
 
+  Future<void> _confirmBatchDelete() async {
+    if (_selectedIds.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(colors: [Color(0xFFFFB2C1), Color(0xFFFF85A1)]),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.delete_sweep_outlined, color: Colors.white, size: 32),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _selectedIds.length == _cycles.length ? "¡Limpiar Historial!" : "¡Eliminar Ciclos!",
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "¿Estás seguro de que deseas borrar ${_selectedIds.length} ciclo(s) seleccionados? Esta acción es definitiva.",
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: Text("Cancelar", style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF85A1).withOpacity(0.15),
+                        foregroundColor: const Color(0xFFFF85A1),
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: Text(_selectedIds.length == _cycles.length ? "Limpiar Todo" : "Eliminar", style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() => _isLoading = true);
+      final resp = await CycleHistoryService.deleteCyclesBatch(_selectedIds.toList());
+      if (resp['success']) {
+        setState(() {
+          _isSelectionMode = false;
+          _selectedIds.clear();
+        });
+        await _loadData();
+      } else {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.redAccent,
+            content: Text('Error: ${resp['message']}'),
+          ),
+        );
+      }
+    }
+  }
+
   List<dynamic> get _filteredCycles {
     if (_cycles.isEmpty) return [];
     final now = DateTime.now();
     switch (_activeFilter) {
       case "Mes anterior":
+        final prevMonth = now.month == 1 ? 12 : now.month - 1;
+        final prevYear = now.month == 1 ? now.year - 1 : now.year;
         return _cycles.where((c) {
            final start = DateTime.parse(c['start_date']);
-           return start.month == now.month - 1 || (now.month == 1 && start.month == 12 && start.year == now.year - 1);
+           return start.month == prevMonth && start.year == prevYear;
         }).toList();
       case "5 últimos":
         return _cycles.take(5).toList();
@@ -79,41 +175,53 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
             Expanded(
               child: Stack(
                 children: [
-                  SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildSummaryGrid(),
-                        const SizedBox(height: 35),
-                        const Text(
-                          "Historial",
-                          style: TextStyle(
-                            fontSize: 26, 
-                            fontWeight: FontWeight.w900, 
-                            color: Colors.black,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        _buildFilterBar(),
-                        const SizedBox(height: 24),
-                        _buildHistoryList(),
-                        const SizedBox(height: 40),
-                      ],
-                    ),
-                  ),
-                  if (_isLoading)
-                    const Positioned(
-                      top: 0, left: 0, right: 0,
-                      child: LinearProgressIndicator(color: Color(0xFFFF85A1), backgroundColor: Colors.transparent, minHeight: 2),
-                    ),
+                  refreshIndicator(),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget refreshIndicator() {
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      color: const Color(0xFFFF85A1),
+      child: Stack(
+        children: [
+          SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSummaryGrid(),
+                const SizedBox(height: 35),
+                const Text(
+                  "Historial",
+                  style: TextStyle(
+                    fontSize: 26, 
+                    fontWeight: FontWeight.w900, 
+                    color: Colors.black,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                _buildFilterBar(),
+                const SizedBox(height: 24),
+                _buildHistoryList(),
+                const SizedBox(height: 40),
+              ],
+            ),
+          ),
+          if (_isLoading)
+            const Positioned(
+              top: 0, left: 0, right: 0,
+              child: LinearProgressIndicator(color: Color(0xFFFF85A1), backgroundColor: Colors.transparent, minHeight: 2),
+            ),
+        ],
       ),
     );
   }
@@ -126,24 +234,71 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2)),
+            if (!_isSelectionMode) ...[
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.chevron_left, color: Colors.black, size: 28),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              const Text(
+                'Tus Ciclos',
+                style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 20),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent, size: 24),
+                  onPressed: () => setState(() => _isSelectionMode = true),
+                ),
+              ),
+            ] else ...[
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.black, size: 28),
+                onPressed: () => setState(() {
+                  _isSelectionMode = false;
+                  _selectedIds.clear();
+                }),
+              ),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _selectedIds.length == _filteredCycles.length && _filteredCycles.isNotEmpty,
+                    shape: const CircleBorder(),
+                    onChanged: (val) {
+                      setState(() {
+                        if (val == true) {
+                          _selectedIds.addAll(_filteredCycles.map((c) => c['id'].toString()));
+                        } else {
+                          _selectedIds.clear();
+                        }
+                      });
+                    },
+                    activeColor: const Color(0xFFFF85A1),
+                  ),
+                  const Text('Todo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ],
               ),
-              child: IconButton(
-                icon: const Icon(Icons.chevron_left, color: Colors.black, size: 28),
-                onPressed: () => Navigator.pop(context),
+              IconButton(
+                icon: Icon(Icons.delete_sweep_outlined, 
+                      color: _selectedIds.isEmpty ? Colors.grey[400] : Colors.redAccent, 
+                      size: 28),
+                onPressed: _selectedIds.isEmpty ? null : _confirmBatchDelete,
               ),
-            ),
-            const Text(
-              'Tus Ciclos',
-              style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 20),
-            ),
-            const SizedBox(width: 48), // Spacer for centering
+            ],
           ],
         ),
       ),
@@ -208,21 +363,17 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
         separatorBuilder: (context, index) => Divider(height: 48, color: Colors.grey[50]),
         itemBuilder: (context, index) {
           final cycle = list[index];
+          final String id = cycle['id'].toString();
           final start = DateTime.parse(cycle['start_date']);
-          
-          // Period end (actual bleeding)
           final periodEnd = cycle['end_date'] != null ? DateTime.parse(cycle['end_date']) : null;
           final int bleedingDuration = periodEnd != null ? periodEnd.difference(start).inDays + 1 : 0;
           
-          // Full Cycle Logic: find the next (newer) cycle's start date to determine the end of this cycle
+          // Find full cycle end based on the original full cycles list to be accurate
+          int originalIndex = _cycles.indexOf(cycle);
           DateTime? fullCycleEnd;
-          if (index > 0) {
-            // list is ordered desc (recent first), so list[index-1] started AFTER list[index]
-            final nextCycleStart = DateTime.parse(list[index - 1]['start_date']);
+          if (originalIndex > 0) {
+            final nextCycleStart = DateTime.parse(_cycles[originalIndex - 1]['start_date']);
             fullCycleEnd = nextCycleStart.subtract(const Duration(days: 1));
-          } else if (cycle['end_date'] != null) {
-             // If it's the most recent but has an end date (not current), we might need a better way
-             // or just use avg cycle as reference. Usually end_date null = current.
           }
 
           final int fullCycleDays = fullCycleEnd != null 
@@ -239,13 +390,46 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
                 child: child,
               ),
             ),
-            child: _buildCycleHistoryItem(
-              dateRange: _formatDateRange(start, fullCycleEnd),
-              fullDuration: fullCycleDays,
-              bleedingDays: bleedingDuration > 0 ? bleedingDuration : (_stats['period_duration'] ?? 5),
-              isCurrent: cycle['end_date'] == null,
-              startDate: start,
-              onTap: () => _showCycleDetailModal(context, fullCycleDays, bleedingDuration > 0 ? bleedingDuration : (_stats['period_duration'] ?? 5))
+            child: Row(
+              children: [
+                if (_isSelectionMode)
+                  Checkbox(
+                    value: _selectedIds.contains(id),
+                    shape: const CircleBorder(),
+                    onChanged: (val) {
+                      setState(() {
+                        if (val == true) {
+                          _selectedIds.add(id);
+                        } else {
+                          _selectedIds.remove(id);
+                        }
+                      });
+                    },
+                    activeColor: const Color(0xFFFF85A1),
+                  ),
+                Expanded(
+                  child: _buildCycleHistoryItem(
+                    dateRange: _formatDateRange(start, fullCycleEnd),
+                    fullDuration: fullCycleDays,
+                    bleedingDays: bleedingDuration > 0 ? bleedingDuration : (_stats['period_duration'] ?? 5),
+                    isCurrent: cycle['end_date'] == null && originalIndex == 0,
+                    startDate: start,
+                    onTap: () {
+                      if (_isSelectionMode) {
+                        setState(() {
+                          if (_selectedIds.contains(id)) {
+                            _selectedIds.remove(id);
+                          } else {
+                            _selectedIds.add(id);
+                          }
+                        });
+                      } else {
+                        _showCycleDetailModal(context, fullCycleDays, bleedingDuration > 0 ? bleedingDuration : (_stats['period_duration'] ?? 5));
+                      }
+                    }
+                  ),
+                ),
+              ],
             ),
           );
         },
@@ -254,8 +438,8 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
   }
 
   String _formatDateRange(DateTime start, DateTime? end) {
-    String startStr = DateFormat('MMM d').format(start);
-    String endStr = end != null ? DateFormat('MMM d, yyyy').format(end) : "Hoy";
+    String startStr = DateFormat('d MMM', 'es').format(start);
+    String endStr = end != null ? DateFormat('d MMM, yyyy', 'es').format(end) : "Hoy";
     return "$startStr - $endStr";
   }
 
@@ -314,40 +498,43 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (isCurrent)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4.0),
-                    child: Text(
-                      "Ciclo Actual",
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF81A4FF),
-                        letterSpacing: 0.5,
+        GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isCurrent)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 4.0),
+                        child: Text(
+                          "Ciclo Actual",
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF81A4FF),
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                       ),
+                    Text(
+                      dateRange,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
                     ),
-                  ),
-                Text(
-                  dateRange,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+                  ],
                 ),
-              ],
-            ),
-            GestureDetector(
-              onTap: onTap,
-              child: AnimatedContainer(
+              ),
+              AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: ShapeDecoration(
                   color: const Color(0xFFF5F6FF), 
-                  shape: StadiumBorder(
-                    side: BorderSide(color: const Color(0xFF81A4FF).withOpacity(0.2))
+                  shape: const StadiumBorder(
+                    side: BorderSide(color: Color(0xFF81A4FF), width: 0.1)
                   ),
                   shadows: [
                     BoxShadow(color: const Color(0xFF81A4FF).withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
@@ -364,8 +551,8 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 18),
         _buildCycleVisualBar(
@@ -385,8 +572,6 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
     bool isCurrent = false,
   }) {
     const int totalSegments = 16;
-    
-    // Average durations for relative phases
     final int avgCycle = _stats['avg_cycle_duration'] ?? 28;
     final int effectiveDuration = isCurrent ? avgCycle : totalDays;
 
@@ -394,20 +579,15 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: List.generate(totalSegments, (index) {
         double dayOfCycle = (index / (totalSegments - 1)) * effectiveDuration;
+        final Color periodColor = const Color(0xFFFFB2C1); // PINK
+        final Color fertileColor = const Color(0xFFCCEAFF);
+        final Color normalColor = const Color(0xFFF5F5F5);
+        final Color dotColor = const Color(0xFFFF85A1);
 
-        // Colors
-        final Color periodColor = const Color(0xFFEBD8F5); // Morado para el periodo
-        final Color fertileColor = const Color(0xFFCCEAFF); // Azul para ventana fértil
-        final Color normalColor = const Color(0xFFF5F5F5); // Gris claro
-        final Color dotColor = const Color(0xFFFF85A1); // Punto indicador (Rosado fuerte)
-
-        // Determine phase
         bool isPeriod = dayOfCycle < bleedingDays;
-        
         int ovulation = effectiveDuration - 14;
         bool isFertile = dayOfCycle >= (ovulation - 5) && dayOfCycle <= (ovulation + 1);
 
-        // Current indicator
         if (isCurrent) {
           int currentIndex = ((DateTime.now().difference(startDate).inDays) / avgCycle * totalSegments).floor().clamp(0, totalSegments - 1);
           if (index == currentIndex) {
@@ -427,7 +607,6 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
         }
 
         Color segmentColor = isPeriod ? periodColor : (isFertile ? fertileColor : normalColor);
-
         return Container(
           width: 12,
           height: 6,
@@ -547,9 +726,9 @@ class _InteractiveSummaryCardState extends State<_InteractiveSummaryCard> {
                 child: Icon(widget.icon, color: Colors.white, size: 32),
               ),
               const SizedBox(height: 16),
-              Text(
-                "¡Tu ${widget.label}!",
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              const Text(
+                "¡Tu resumen!",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
