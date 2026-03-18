@@ -124,7 +124,16 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
                 _buildCustomAppBar(),
                 Expanded(
                   child: _isLoading && _savedCycles.isEmpty
-                    ? const Center(child: CircularProgressIndicator(color: Color(0xFFEBD8F5)))
+                    ? const Column(
+                        children: [
+                          LinearProgressIndicator(
+                            color: Color(0xFFFF9EAF),
+                            backgroundColor: Colors.transparent,
+                            minHeight: 2,
+                          ),
+                          Expanded(child: SizedBox()),
+                        ],
+                      )
                     : ListView.separated(
                         controller: _scrollController,
                         padding: const EdgeInsets.fromLTRB(24, 8, 24, 150),
@@ -135,16 +144,26 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
                 ),
               ],
             ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: _buildSaveButton(),
-            ),
+            if (!(_isLoading && _savedCycles.isEmpty))
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: _buildSaveButton(),
+              ),
             if (_isLoading && _savedCycles.isNotEmpty)
               Container(
                 color: Colors.white.withOpacity(0.3),
-                child: const Center(child: CircularProgressIndicator(color: Color(0xFFEBD8F5))),
+                child: const Column(
+                  children: [
+                    SizedBox(height: 80), // Approximated height of CustomAppBar
+                    LinearProgressIndicator(
+                      color: Color(0xFFFF9EAF),
+                      backgroundColor: Colors.transparent,
+                      minHeight: 2,
+                    ),
+                  ],
+                ),
               ),
           ],
         ),
@@ -303,8 +322,13 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
                   width: 35,
                   height: 35,
                   decoration: const BoxDecoration(
-                    color: Color(0xFF9C27B0), // Darker Purple for completed periods
+                    color: Color(0xFFDCA4FF), // Morado claro for completed periods
                     shape: BoxShape.circle,
+                  ),
+                  child: ClipOval(
+                    child: CustomPaint(
+                      painter: StripedPainter(color: Colors.white.withOpacity(0.6)),
+                    ),
                   ),
                 )
               // 2. Highlight Current Selection or Active Period (Light Purple Range)
@@ -440,5 +464,25 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
       ),
     );
   }
+}
+
+class StripedPainter extends CustomPainter {
+  final Color color;
+  const StripedPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    var paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+    double step = 3.5;
+    for (double i = -size.height; i < size.width; i += step) {
+      canvas.drawLine(Offset(i, 0), Offset(i + size.height, size.height), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 

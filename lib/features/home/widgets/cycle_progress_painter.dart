@@ -49,9 +49,9 @@ class CycleProgressPainter extends CustomPainter {
 
       // Petal Rainbow Palette
       const Color colorMenstruation = Color(0xFFFFB5E1); 
-      const Color colorFollicular = Color(0xFFE8F5E9);    
-      const Color colorFertileWindow = Color(0xFFC5EBAA); 
-      const Color colorOvulation = Color(0xFFFFD1A9);    
+      const Color colorFollicular = Color(0xFFD1E3FF);    
+      const Color colorFertileWindow = Color(0xFF97BAA5); 
+      const Color colorOvulation = Color(0xFF4A90E2);    
       const Color colorLuteal = Color(0xFFD2BDFF);       
 
       // Calculate base stops for phase boundaries
@@ -163,9 +163,9 @@ class CycleProgressPainter extends CustomPainter {
       );
     }
 
-    drawMarker(1, const Color(0xFFFFB5E1), "period"); // Coral
-    drawMarker(fertileDay, const Color(0xFFC5EBAA), "fertile"); // Mint Green
-    drawMarker(ovulationDay, const Color(0xFFFFD1A9), "ovulation"); // Peach
+    drawMarker(1, const Color(0xFFFFB5E1), "period"); // Original Pink
+    drawMarker(fertileDay, const Color(0xFF97BAA5), "fertile"); // Muted Green
+    drawMarker(ovulationDay, const Color(0xFF4A90E2), "ovulation"); // Strong Blue
 
     // Handle
     final angle = -math.pi / 2 + (2 * math.pi * progress);

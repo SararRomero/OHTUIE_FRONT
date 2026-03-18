@@ -9,11 +9,11 @@ class CycleUtils {
     required int ovulationDay,
   }) {
     // Petal Rainbow Palette (Vibrant & Unique)
-    const Color colorMenstruation = Color(0xFFFFB5E1); // Coral / Intense Pink
-    const Color colorFollicular = Color(0xFFE8F5E9);    // Soft Mint
-    const Color colorFertileWindow = Color(0xFFC5EBAA); // Fresh Spring Green
-    const Color colorOvulation = Color(0xFFFFD1A9);    // Peach Orange
-    const Color colorLuteal = Color(0xFFD2BDFF);       // Luteal Purple
+    const Color colorMenstruation = Color(0xFFFFB5E1); // Original Pink/Coral
+    const Color colorFollicular = Color(0xFFD1E3FF);    // New Soft Blue for follicular phase
+    const Color colorFertileWindow = Color(0xFF97BAA5); // Muted Green for fertile window
+    const Color colorOvulation = Color(0xFF4A90E2);    // Strong Blue for ovulation
+    const Color colorLuteal = Color(0xFFD2BDFF);       // Original Luteal Purple
 
     String currentPhaseText = "";
     Color phaseColor = colorFollicular;

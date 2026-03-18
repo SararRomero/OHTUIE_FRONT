@@ -460,9 +460,7 @@ class _EditCycleScreenState extends State<EditCycleScreen> with SingleTickerProv
       height: 60,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFB2C1), Color(0xFFFF4081)],
-        ),
+        color: const Color(0xFFFF4081),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFFFF4081).withOpacity(0.3),

@@ -29,25 +29,35 @@ class LogoutModal extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF9EAF),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.logout, color: Colors.white, size: 30),
+              ),
+              const SizedBox(height: 20),
               const Text(
-                'Salir',
+                '¡Cerrar Sesión!',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF90CAF9), // Soft blue as requested
+                  color: Colors.black,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               const Text(
-                'Estas segura que quieres salir?',
+                '¿Estás seguro de que deseas cerrar tu sesión? Deberás ingresar nuevamente para acceder.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black87,
+                  fontSize: 14,
+                  color: Colors.grey,
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 30),
               Row(
                 children: [
                   Expanded(
@@ -55,16 +65,17 @@ class LogoutModal extends StatelessWidget {
                       onPressed: () => Navigator.pop(context),
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: const Color(0xFFF5F5F5),
+                        backgroundColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                       ),
                       child: const Text(
                         'Cancelar',
                         style: TextStyle(
-                          color: Colors.black,
+                          color: Colors.grey,
                           fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
                     ),
@@ -83,16 +94,17 @@ class LogoutModal extends StatelessWidget {
                       },
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: const Color(0xFF90CAF9), // Light blue background
+                        backgroundColor: const Color(0xFFFFE5E9), 
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                       ),
                       child: const Text(
-                        'Si, deseo salir',
+                        'Salir',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFFFF4081),
                           fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
                     ),

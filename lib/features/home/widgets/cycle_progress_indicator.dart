@@ -108,7 +108,7 @@ class CycleProgressIndicatorState extends State<CycleProgressIndicator> with Sin
                 color: Colors.transparent, 
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFF79AB0).withAlpha(40), // Rosa Pétalo difuminado
+                    color: const Color(0xFFF79AB0).withAlpha(60), // Original Pink glow
                     blurRadius: 60,
                     spreadRadius: 20,
                   ),

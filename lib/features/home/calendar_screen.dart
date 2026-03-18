@@ -29,6 +29,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   late Map<String, dynamic> _predictionData;
   Map<String, dynamic>? _selectedDayLog;
   bool _isLoadingLog = false;
+  bool _isLoadingPredictions = false;
 
   final Map<String, Map<String, String>> _moodOptions = {
     'normal': {'label': 'Normal', 'imagePath': 'lib/assets/image/animo_normal.png'},
@@ -59,6 +60,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     super.initState();
     _predictionData = widget.predictionData ?? {};
     if (widget.predictionData == null) {
+      _isLoadingPredictions = true;
       _loadPredictions();
     }
     _loadDailyLog(_selectedDay);
@@ -66,9 +68,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Future<void> _loadPredictions() async {
     final result = await HomeService.getPredictions();
-    if (mounted && result['success']) {
+    if (mounted) {
       setState(() {
-        _predictionData = result['data'];
+        if (result['success']) {
+          _predictionData = result['data'];
+        }
+        _isLoadingPredictions = false;
       });
     }
   }
@@ -125,6 +130,31 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingPredictions) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFFFF8F9),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+                child: CalendarHeader(),
+              ),
+              SizedBox(height: 10),
+              LinearProgressIndicator(
+                color: Color(0xFFFF9EAF),
+                backgroundColor: Colors.transparent,
+                minHeight: 2,
+              ),
+              Expanded(
+                child: SizedBox(),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     DateTime todayDate = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
     final selectedDayPhase = _getDayPhaseInfo(todayDate);
 
@@ -302,9 +332,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
         children: [
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(formattedDate, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+               Text(formattedDate, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 Text(
                   description, 
                   style: const TextStyle(fontSize: 12, color: Colors.black45),
@@ -332,7 +362,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               children: [
                 Container(
                   width: 45, height: 45,
-                  decoration: const BoxDecoration(color: Color(0xFFD4E2FF), shape: BoxShape.circle),
+                  decoration: const BoxDecoration(color: Color(0xFFFF4081), shape: BoxShape.circle),
                   child: const Icon(Icons.water_drop_outlined, color: Colors.white, size: 22),
                 ),
                 const SizedBox(height: 6),
