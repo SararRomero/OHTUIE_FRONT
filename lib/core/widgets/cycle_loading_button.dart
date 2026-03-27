@@ -90,9 +90,7 @@ class _CycleLoadingButtonState extends State<CycleLoadingButton> with SingleTick
               ),
               padding: EdgeInsets.zero,
             ),
-            child: widget.isLoading 
-              ? const SizedBox.shrink() 
-              : widget.child ?? Row(
+            child: widget.child ?? Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [

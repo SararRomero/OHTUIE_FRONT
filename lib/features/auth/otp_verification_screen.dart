@@ -188,6 +188,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         isLoading: _isLoading,
                         onPressed: _handleVerifyCode,
                         backgroundColor: const Color(0xFFFFCCE5),
+                        loadingColor: const Color(0xFFFF4081),
                         borderRadius: 30,
                       ),
                     ],

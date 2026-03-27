@@ -273,6 +273,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         isLoading: _isLoading,
                         onPressed: _handleLogin,
                         backgroundColor: const Color(0xFFFFCCE5),
+                        loadingColor: const Color(0xFFFF4081),
                         borderRadius: 30,
                       ),
                       const SizedBox(height: 20),

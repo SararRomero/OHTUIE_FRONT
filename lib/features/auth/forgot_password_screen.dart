@@ -190,6 +190,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         isLoading: _isLoading,
                         onPressed: _handleRecoverPassword,
                         backgroundColor: const Color(0xFFFFCCE5),
+                        loadingColor: const Color(0xFFFF4081),
                         borderRadius: 30,
                       ),
                     ],
