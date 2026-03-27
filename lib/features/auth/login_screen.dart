@@ -5,6 +5,7 @@ import 'forgot_password_screen.dart';
 import 'auth_service.dart';
 import '../admin/presentation/screens/admin_dashboard_screen.dart';
 import '../home/user_home_screen.dart';
+import '../../core/widgets/cycle_loading_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -42,9 +43,9 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     final result = await AuthService.login(email, password);
+    setState(() => _isLoading = false);
 
     if (mounted) {
-      setState(() => _isLoading = false);
       if (result['success']) {
         if (result['role'] == 'admin') {
           Navigator.pushReplacement(
@@ -58,11 +59,76 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${result['message']}'), backgroundColor: Colors.red),
-        );
+        if (result['message'] == 'Inactive user') {
+          _showBlockedDialog();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message']),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+        }
       }
     }
+  }
+
+  void _showBlockedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFFFFB2C1), Color(0xFFFF85A1)]),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(color: const Color(0xFFFF85A1).withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6)),
+                  ]
+                ),
+                child: const Icon(Icons.block_flipped, color: Colors.white, size: 40),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                '¡Cuenta Bloqueada!',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Tu cuenta ha sido desactivada temporalmente por un administrador. Esto puede deberse a razones de seguridad o incumplimiento de nuestras normas.',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF85A1).withOpacity(0.1),
+                    foregroundColor: const Color(0xFFFF85A1),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text('Entendido', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -202,21 +268,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 20),
 
                       // Login Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleLogin,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFFCCE5),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                            elevation: 0,
-                          ),
-                          child: _isLoading 
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Entra', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        ),
+                      CycleLoadingButton(
+                        text: 'Entra',
+                        isLoading: _isLoading,
+                        onPressed: _handleLogin,
+                        backgroundColor: const Color(0xFFFFCCE5),
+                        borderRadius: 30,
                       ),
                       const SizedBox(height: 20),
 

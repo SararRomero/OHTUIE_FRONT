@@ -8,6 +8,7 @@ import 'widgets/cycle_duration_page.dart';
 import 'widgets/last_period_page.dart';
 import 'widgets/period_duration_page.dart';
 import 'widgets/ripple_painter.dart';
+import '../../core/widgets/cycle_loading_button.dart';
 
 class CycleSetupScreen extends StatefulWidget {
   final String name;
@@ -193,50 +194,17 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> with TickerProvider
                   }),
                 ),
                 const SizedBox(height: 30),
-                GestureDetector(
-                  onTap: _onNextTap,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                       AnimatedBuilder(
-                        animation: _rippleController,
-                        builder: (context, child) {
-                          return CustomPaint(
-                            size: const Size(120, 120),
-                            painter: RipplePainter(
-                              animation: _rippleController,
-                              colors: const [
-                                Color(0xFFFFC1CC),
-                                Color(0xFFFFD1DC),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                      Container(
-                        width: 70, 
+                      CycleLoadingButton(
+                        text: "", // No text for this icon button
+                        icon: Icons.arrow_forward,
+                        isLoading: _isLoading,
+                        onPressed: _onNextTap,
+                        backgroundColor: _getCurrentButtonColor(),
+                        borderRadius: 35,
+                        width: 70,
                         height: 70,
-                        decoration: BoxDecoration(
-                          color: _getCurrentButtonColor(),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: _getCurrentButtonColor().withAlpha((0.4 * 255).toInt()),
-                              blurRadius: 15,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: _isLoading 
-                          ? const Padding(
-                              padding: EdgeInsets.all(20.0),
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
-                            )
-                          : const Icon(Icons.arrow_forward, color: Colors.white, size: 30),
+                        loadingColor: Colors.white,
                       ),
-                    ],
-                  ),
-                ),
                 const SizedBox(height: 40),
               ],
             ),

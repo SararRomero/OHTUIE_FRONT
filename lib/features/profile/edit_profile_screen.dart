@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'user_service.dart';
 import '../auth/auth_service.dart';
 import 'delete_account_screen.dart';
+import '../../core/widgets/cycle_loading_button.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final String name;
@@ -242,21 +243,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildSaveButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 55,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _handleSave,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFFF4081),
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-        ),
-        child: _isLoading 
-          ? const CircularProgressIndicator(color: Colors.white)
-          : const Text('Guardar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-      ),
+    return CycleLoadingButton(
+      text: 'Guardar',
+      isLoading: _isLoading,
+      onPressed: _handleSave,
+      backgroundColor: const Color(0xFFFF4081),
+      borderRadius: 30,
     );
   }
 

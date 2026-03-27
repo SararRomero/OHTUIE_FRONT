@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../auth/auth_service.dart';
 import 'user_service.dart';
+import '../../core/widgets/cycle_loading_button.dart';
 
 class DeleteAccountScreen extends StatefulWidget {
   const DeleteAccountScreen({super.key});
@@ -71,24 +72,15 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
-              if (_isLoading)
-                const CircularProgressIndicator(color: Colors.redAccent)
-              else ...[
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(
-                    onPressed: _handleDelete,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red[400],
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: 0,
-                    ),
-                    child: const Text('Sí, eliminar cuenta', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  ),
-                ),
-                const SizedBox(height: 16),
+              CycleLoadingButton(
+                text: 'Sí, eliminar cuenta',
+                isLoading: _isLoading,
+                onPressed: _handleDelete,
+                backgroundColor: Colors.red[400],
+                borderRadius: 16,
+              ),
+              const SizedBox(height: 16),
+              if (!_isLoading) 
                 SizedBox(
                   width: double.infinity,
                   height: 55,
@@ -102,7 +94,6 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                     child: const Text('Cancelar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
-              ],
             ],
           ),
         ),

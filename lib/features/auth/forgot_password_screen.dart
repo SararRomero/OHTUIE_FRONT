@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'otp_verification_screen.dart';
 import 'auth_service.dart';
+import '../../core/widgets/cycle_loading_button.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -184,22 +185,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       ),
                       const SizedBox(height: 40),
 
-                      // Send OTP Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleRecoverPassword,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFFCCE5), 
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                            elevation: 0,
-                          ),
-                          child: _isLoading 
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Enviar Código', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        ),
+                      CycleLoadingButton(
+                        text: 'Enviar Código',
+                        isLoading: _isLoading,
+                        onPressed: _handleRecoverPassword,
+                        backgroundColor: const Color(0xFFFFCCE5),
+                        borderRadius: 30,
                       ),
                     ],
                   ),

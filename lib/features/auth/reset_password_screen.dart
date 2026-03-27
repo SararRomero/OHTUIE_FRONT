@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'auth_service.dart';
 import 'login_screen.dart';
+import '../../core/widgets/cycle_loading_button.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String email;
@@ -196,22 +197,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       
                       const SizedBox(height: 40),
 
-                      // Save Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleResetPassword,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFFCCE5), 
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                            elevation: 0,
-                          ),
-                          child: _isLoading 
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Guardar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        ),
+                      CycleLoadingButton(
+                        text: 'Guardar',
+                        isLoading: _isLoading,
+                        onPressed: _handleResetPassword,
+                        backgroundColor: const Color(0xFFFFCCE5),
+                        borderRadius: 30,
                       ),
                     ],
                   ),

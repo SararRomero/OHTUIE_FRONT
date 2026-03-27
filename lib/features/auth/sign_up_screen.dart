@@ -3,6 +3,7 @@ import 'package:ohtuie_app2/features/auth/login_screen.dart';
 import '../cycle_setup/cycle_setup_screen.dart';
 import 'terms_screen.dart';
 import 'auth_service.dart';
+import '../../core/widgets/cycle_loading_button.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -210,21 +211,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       const SizedBox(height: 20),
 
                       // Sign Up Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleSignUp,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFFCCE5), 
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                            elevation: 0,
-                          ),
-                          child: _isLoading 
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Registrate', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        ),
+                      CycleLoadingButton(
+                        text: 'Continuar',
+                        isLoading: _isLoading,
+                        onPressed: _handleSignUp,
+                        backgroundColor: const Color(0xFFFFCCE5),
+                        borderRadius: 30,
                       ),
                       const SizedBox(height: 20),
                       

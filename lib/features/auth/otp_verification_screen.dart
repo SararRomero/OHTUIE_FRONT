@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'auth_service.dart';
 import 'reset_password_screen.dart';
+import '../../core/widgets/cycle_loading_button.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String email;
@@ -182,22 +183,12 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
                       const SizedBox(height: 30),
 
-                      // Verify Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleVerifyCode,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFFCCE5), 
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                            elevation: 0,
-                          ),
-                          child: _isLoading 
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Verificar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        ),
+                      CycleLoadingButton(
+                        text: 'Verificar',
+                        isLoading: _isLoading,
+                        onPressed: _handleVerifyCode,
+                        backgroundColor: const Color(0xFFFFCCE5),
+                        borderRadius: 30,
                       ),
                     ],
                   ),

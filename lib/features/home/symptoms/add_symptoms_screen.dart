@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'daily_log_service.dart';
+import '../../../core/widgets/cycle_loading_button.dart';
 import 'widgets/flow_selector_widget.dart';
 import 'widgets/symptom_selector_widget.dart';
 import 'widgets/mood_selector_widget.dart';
@@ -298,21 +299,13 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
               ),
             ],
           ),
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _saveLog,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFBDD4FF),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-            ),
-            child: _isLoading 
-              ? const SizedBox(
-                  height: 20, 
-                  width: 20, 
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                )
-              : const Text('Guardar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          child: CycleLoadingButton(
+            text: 'Guardar',
+            isLoading: _isLoading,
+            onPressed: _saveLog,
+            backgroundColor: const Color(0xFFBDD4FF),
+            borderRadius: 30,
+            height: 60,
           ),
         ),
       ),

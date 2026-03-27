@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'user_service.dart';
 import '../auth/forgot_password_screen.dart';
+import '../../core/widgets/cycle_loading_button.dart';
 
 enum PasswordState { none, validating, correct, incorrect }
 
@@ -246,21 +247,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         ),
                         
                         const SizedBox(height: 48),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 55,
-                          child: ElevatedButton(
-                            onPressed: (_isLoading || _currentPasswordState != PasswordState.correct) ? null : _handleSave,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFFB2C1),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                              elevation: 0,
-                            ),
-                            child: _isLoading 
-                              ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text('Actualizar Contraseña', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                          ),
+                        CycleLoadingButton(
+                          text: 'Actualizar Contraseña',
+                          isLoading: _isLoading,
+                          onPressed: (_currentPasswordState != PasswordState.correct) ? null : _handleSave,
+                          backgroundColor: const Color(0xFFFFB2C1),
+                          borderRadius: 30,
                         ),
                       ],
                     ),

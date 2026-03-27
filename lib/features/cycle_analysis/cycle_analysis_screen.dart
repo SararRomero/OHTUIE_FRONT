@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'cycle_analysis_service.dart';
+import '../../core/widgets/cycle_loading_button.dart';
 
 class CycleAnalysisScreen extends StatefulWidget {
   const CycleAnalysisScreen({super.key});
@@ -88,14 +89,20 @@ class _CycleAnalysisScreenState extends State<CycleAnalysisScreen> {
           child: Column(
             children: [
               _buildHeader(),
+              if (_isLoading)
+                const LinearProgressIndicator(
+                  color: Color(0xFFFF85A1),
+                  backgroundColor: Colors.transparent,
+                  minHeight: 2,
+                ),
               Expanded(
-                child: _isLoading 
-                  ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF85A1)))
-                  : SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                child: _isLoading
+                    ? const SizedBox.shrink()
+                    : SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildSummaryGrid(),
                           const SizedBox(height: 25),
@@ -384,38 +391,19 @@ class _CycleAnalysisScreenState extends State<CycleAnalysisScreen> {
       ],
     );
   }
-
   Widget _buildExportButton() {
-    return GestureDetector(
-      onTap: _isExporting ? null : () async {
+    return CycleLoadingButton(
+      text: "Exportar Reporte a PDF",
+      icon: Icons.picture_as_pdf,
+      isLoading: _isExporting,
+      onPressed: () async {
         setState(() => _isExporting = true);
         await CycleAnalysisService.generateAndExportPdf(_data);
         setState(() => _isExporting = false);
       },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 15, offset: const Offset(0, 5)),
-          ],
-        ),
-        child: _isExporting 
-          ? const Center(child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))
-          : const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.picture_as_pdf, color: Colors.white, size: 20),
-                const SizedBox(width: 10),
-                Text(
-                  "Exportar Reporte a PDF",
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ],
-            ),
-      ),
+      backgroundColor: Colors.black,
+      borderRadius: 20,
+      height: 60,
     );
   }
 }

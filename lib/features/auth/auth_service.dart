@@ -28,7 +28,11 @@ class AuthService {
         return {"success": true, "token": token, "role": role};
       } else {
         final error = jsonDecode(response.body);
-        return {"success": false, "message": error['detail'] ?? "Login failed"};
+        return {
+          "success": false, 
+          "message": error['detail'] ?? "Login failed",
+          "statusCode": response.statusCode
+        };
       }
     } catch (e) {
       return {"success": false, "message": "Connection error: $e"};
