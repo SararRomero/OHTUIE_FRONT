@@ -9,8 +9,67 @@ class CycleAnalysisScreen extends StatefulWidget {
 }
 
 class _CycleAnalysisScreenState extends State<CycleAnalysisScreen> {
-  final Map<String, dynamic> _data = CycleAnalysisService.getMockAnalysisData();
+  Map<String, dynamic> _data = CycleAnalysisService.getMockAnalysisData();
   bool _isExporting = false;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final data = await CycleAnalysisService.fetchCycleAnalysis();
+    if (mounted) {
+      setState(() {
+        _data = data;
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showDetectiveInfo() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          children: [
+            const Icon(Icons.psychology, color: Color(0xFF9C27B0)),
+            const SizedBox(width: 10),
+            const Text("Detective OHTUIE", style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "¿Cómo detectamos patrones?",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF9C27B0)),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              "No es necesario registrar tus síntomas todos los días. El detective analiza los patrones basándose en lo que registras en el mismo día.",
+              style: TextStyle(fontSize: 14, height: 1.5),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              "Para encontrar correlaciones, el sistema busca días en los que hayas marcado tanto un síntoma como un estado de ánimo. Al identificar que estos dos eventos ocurren juntos con frecuencia, te alertaremos sobre este patrón para que puedas conocerte mejor.",
+              style: TextStyle(fontSize: 14, height: 1.5),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Entendido", style: TextStyle(color: Color(0xFF9C27B0), fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,27 +89,33 @@ class _CycleAnalysisScreenState extends State<CycleAnalysisScreen> {
             children: [
               _buildHeader(),
               Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSummaryGrid(),
-                      const SizedBox(height: 25),
-                      _buildAnomalyAlert(),
-                      const SizedBox(height: 25),
-                      _buildDetectiveCard(),
-                      const SizedBox(height: 25),
-                      _buildSymptomStats(),
-                      const SizedBox(height: 25),
-                      _buildAdviceSection(),
-                      const SizedBox(height: 30),
-                      _buildExportButton(),
-                      const SizedBox(height: 40),
-                    ],
-                  ),
-                ),
+                child: _isLoading 
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF85A1)))
+                  : SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSummaryGrid(),
+                          const SizedBox(height: 25),
+                          if ((_data['anomalies'] as List).isNotEmpty) ...[
+                            _buildAnomalyAlert(),
+                            const SizedBox(height: 25),
+                          ],
+                          _buildDetectiveCard(),
+                          const SizedBox(height: 25),
+                          if ((_data['symptoms_summary'] as List).isNotEmpty) ...[
+                            _buildSymptomStats(),
+                            const SizedBox(height: 25),
+                          ],
+                          _buildAdviceSection(),
+                          const SizedBox(height: 30),
+                          _buildExportButton(),
+                          const SizedBox(height: 40),
+                        ],
+                      ),
+                    ),
               ),
             ],
           ),
@@ -174,6 +239,7 @@ class _CycleAnalysisScreenState extends State<CycleAnalysisScreen> {
   }
 
   Widget _buildDetectiveCard() {
+    if ((_data['correlations'] as List).isEmpty) return const SizedBox.shrink();
     final correlation = (_data['correlations'] as List).first;
     return Container(
       width: double.infinity,
@@ -199,6 +265,13 @@ class _CycleAnalysisScreenState extends State<CycleAnalysisScreen> {
               const Text(
                 "Detective OHTUIE",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+              ),
+              const Spacer(),
+              IconButton(
+                onPressed: _showDetectiveInfo,
+                icon: const Icon(Icons.info_outline, color: Color(0xFF9C27B0), size: 22),
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
               ),
             ],
           ),

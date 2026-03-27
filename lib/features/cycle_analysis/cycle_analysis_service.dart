@@ -1,12 +1,33 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
+import '../auth/auth_service.dart';
 import '../profile/user_service.dart';
+import '../../core/network/api_client.dart';
 
 class CycleAnalysisService {
-  // Mock data for analysis (This should eventually come from a database)
+  static Future<Map<String, dynamic>> fetchCycleAnalysis() async {
+    try {
+      final token = await AuthService.getToken();
+      if (token == null) return getMockAnalysisData();
+
+      final response = await ApiClient.get("/cycles/analysis", token: token);
+      
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print("Error response: ${response.body}");
+        return getMockAnalysisData();
+      }
+    } catch (e) {
+      print("Error in fetchCycleAnalysis: $e");
+      return getMockAnalysisData();
+    }
+  }
+
+  // Mock data for analysis (Used as fallback or initial state)
   static Map<String, dynamic> getMockAnalysisData() {
     return {
       'avg_cycle_length': 28,
