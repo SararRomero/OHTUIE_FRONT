@@ -204,6 +204,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         backgroundColor: const Color(0xFFFFCCE5),
                         loadingColor: const Color(0xFFFF4081),
                         borderRadius: 30,
+                        showBorderAnimation: false,
+                        useBorealisAnimation: true,
                       ),
                     ],
                   ),

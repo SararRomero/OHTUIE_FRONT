@@ -71,15 +71,26 @@ class CycleProgressIndicatorState extends State<CycleProgressIndicator> with Sin
 
     DateTime ovulationDate = DateTime.parse(widget.predictionData['ovulation_date'] ?? today.toIso8601String());
     DateTime fertileStart = DateTime.parse(widget.predictionData['fertile_window']?['start'] ?? today.toIso8601String());
+    DateTime fertileEnd = DateTime.parse(widget.predictionData['fertile_window']?['end'] ?? today.toIso8601String());
     
     int ovulationDay = ovulationDate.difference(lastPeriodStart).inDays + 1;
+    while (ovulationDay > avgCycle) ovulationDay -= avgCycle;
+    while (ovulationDay <= 0) ovulationDay += avgCycle;
+
     int fertileDay = fertileStart.difference(lastPeriodStart).inDays + 1;
+    while (fertileDay > avgCycle) fertileDay -= avgCycle;
+    while (fertileDay <= 0) fertileDay += avgCycle;
+
+    int fertileEndDay = fertileEnd.difference(lastPeriodStart).inDays + 1;
+    while (fertileEndDay > avgCycle) fertileEndDay -= avgCycle;
+    while (fertileEndDay <= 0) fertileEndDay += avgCycle;
 
     final phaseInfo = CycleUtils.getPhaseInfo(
       currentCycleDay: currentCycleDay,
       avgCycle: avgCycle,
       periodDuration: periodDuration,
       fertileDay: fertileDay,
+      fertileEndDay: fertileEndDay,
       ovulationDay: ovulationDay,
     );
 

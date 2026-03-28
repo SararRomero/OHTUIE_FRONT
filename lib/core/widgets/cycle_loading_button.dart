@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'ripple_painter.dart';
 
 class CycleLoadingButton extends StatefulWidget {
   final String? text;
@@ -14,6 +15,8 @@ class CycleLoadingButton extends StatefulWidget {
   final double height;
   final double borderRadius;
   final double fontSize;
+  final bool showBorderAnimation;
+  final bool useBorealisAnimation;
 
   const CycleLoadingButton({
     super.key,
@@ -29,6 +32,8 @@ class CycleLoadingButton extends StatefulWidget {
     this.height = 55,
     this.borderRadius = 30,
     this.fontSize = 18,
+    this.showBorderAnimation = true,
+    this.useBorealisAnimation = false,
   }) : assert(text != null || child != null, 'Either text or child must be provided');
 
   @override
@@ -74,7 +79,33 @@ class _CycleLoadingButtonState extends State<CycleLoadingButton> with SingleTick
     final isEnabled = widget.onPressed != null && !widget.isLoading;
 
     return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
       children: [
+        // 1. Background Ripple Animation (Layer 1)
+        if (widget.isLoading && widget.useBorealisAnimation)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  return CustomPaint(
+                    painter: RipplePainter(
+                      animation: _controller,
+                      colors: [
+                        const Color(0xFFFF4081).withOpacity(0.5),
+                        const Color(0xFFFF80AB).withOpacity(0.3),
+                      ],
+                      // Start exactly outside the button
+                      minRadius: widget.borderRadius + 1.0,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        
+        // 2. Main Button (Layer 2)
         SizedBox(
           width: widget.width,
           height: widget.height,
@@ -94,22 +125,25 @@ class _CycleLoadingButtonState extends State<CycleLoadingButton> with SingleTick
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (widget.icon != null) ...[
-                      Icon(widget.icon, color: widget.textColor ?? Colors.white, size: 20),
+                    if (widget.icon != null) 
+                      Icon(widget.icon, color: widget.textColor ?? Colors.white, size: 22),
+                    if (widget.text != null && widget.text!.isNotEmpty) ...[
                       const SizedBox(width: 8),
-                    ],
-                    Text(
-                      widget.text!,
-                      style: TextStyle(
-                        fontSize: widget.fontSize,
-                        fontWeight: FontWeight.bold,
+                      Text(
+                        widget.text!,
+                        style: TextStyle(
+                          fontSize: widget.fontSize,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
           ),
         ),
-        if (widget.isLoading)
+
+        // 3. Border Animation (Layer 3 - Optional)
+        if (widget.isLoading && widget.showBorderAnimation)
           Positioned.fill(
             child: IgnorePointer(
               child: AnimatedBuilder(

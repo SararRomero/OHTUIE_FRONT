@@ -48,11 +48,11 @@ class CycleProgressPainter extends CustomPainter {
       final sweepAngle = 2 * math.pi * progress;
 
       // Petal Rainbow Palette
-      const Color colorMenstruation = Color(0xFFFFB5E1); 
-      const Color colorFollicular = Color(0xFFD1E3FF);    
-      const Color colorFertileWindow = Color(0xFF97BAA5); 
-      const Color colorOvulation = Color(0xFF4A90E2);    
-      const Color colorLuteal = Color(0xFFD2BDFF);       
+      const Color colorMenstruation = Color(0xFFEBD8F5); 
+      const Color colorFollicular = Color(0xFFF5F0FF);    
+      const Color colorFertileWindow = Color(0xFFD4E2FF); 
+      const Color colorOvulation = Color(0xFFFFE5E9);    
+      const Color colorLuteal = Color(0xFFFFE0CC);       
 
       // Calculate base stops for phase boundaries
       final fStart = ((fertileDay - 1) / avgCycle).clamp(0.05, 0.95);
@@ -93,14 +93,13 @@ class CycleProgressPainter extends CustomPainter {
         transform: const GradientRotation(-math.pi / 2),
       );
 
-      // SOLID PROGRESS LAYER (No luminiscent blur)
-      // We use a high stroke width but no MaskFilter for a defined "solid" edge
+      // SOLID PROGRESS LAYER
       final Paint progressPaint = Paint()
         ..shader = gradient.createShader(Rect.fromCircle(center: center, radius: radius))
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
         ..strokeCap = StrokeCap.round;
-
+      
       // Draw the arc
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
@@ -110,7 +109,7 @@ class CycleProgressPainter extends CustomPainter {
         progressPaint,
       );
 
-      // INNER CORE FOR REINFORCEMENT (Ensures solid center of the stroke)
+      // INNER CORE FOR REINFORCEMENT
       final Paint corePaint = Paint()
         ..shader = gradient.createShader(Rect.fromCircle(center: center, radius: radius))
         ..style = PaintingStyle.stroke
@@ -163,9 +162,9 @@ class CycleProgressPainter extends CustomPainter {
       );
     }
 
-    drawMarker(1, const Color(0xFFFFB5E1), "period"); // Original Pink
-    drawMarker(fertileDay, const Color(0xFF97BAA5), "fertile"); // Muted Green
-    drawMarker(ovulationDay, const Color(0xFF4A90E2), "ovulation"); // Strong Blue
+    drawMarker(1, const Color(0xFFEBD8F5), "period"); // Purple
+    drawMarker(fertileDay, const Color(0xFFD4E2FF), "fertile"); // Blue
+    drawMarker(ovulationDay, const Color(0xFFFFE5E9), "ovulation"); // Pink
 
     // Handle
     final angle = -math.pi / 2 + (2 * math.pi * progress);

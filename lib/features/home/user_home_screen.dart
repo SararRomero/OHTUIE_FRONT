@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'home_service.dart';
+import 'calendar_screen.dart';
 import '../profile/profile_screen.dart';
 import '../profile/user_service.dart';
 import 'widgets/cycle_progress_indicator.dart';
@@ -128,6 +129,35 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 PredictionCard(
                   predictionData: _predictionData,
                   onTap: (type) => _indicatorKey.currentState?.triggerGlow(markerType: type),
+                  onCardTap: (type) {
+                    if (_predictionData == null) return;
+                    
+                    DateTime? targetDate;
+                    try {
+                      if (type == 'fertile') {
+                        final dateStr = _predictionData!['fertile_window']?['start'];
+                        if (dateStr != null) targetDate = DateTime.parse(dateStr);
+                      } else if (type == 'ovulation') {
+                        final dateStr = _predictionData!['ovulation_date'];
+                        if (dateStr != null) targetDate = DateTime.parse(dateStr);
+                      } else if (type == 'period') {
+                        final dateStr = _predictionData!['next_period_start'];
+                        if (dateStr != null) targetDate = DateTime.parse(dateStr);
+                      }
+                    } catch (e) {
+                      // Silently fail or handle invalid date
+                    }
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CalendarScreen(
+                          predictionData: _predictionData,
+                          initialDate: targetDate,
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 const Spacer(flex: 2),
               ],

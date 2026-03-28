@@ -16,8 +16,9 @@ import 'edit_cycle_screen.dart';
 
 class CalendarScreen extends StatefulWidget {
   final Map<String, dynamic>? predictionData;
+  final DateTime? initialDate;
 
-  const CalendarScreen({super.key, this.predictionData});
+  const CalendarScreen({super.key, this.predictionData, this.initialDate});
 
   @override
   State<CalendarScreen> createState() => _CalendarScreenState();
@@ -59,6 +60,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void initState() {
     super.initState();
     _predictionData = widget.predictionData ?? {};
+
+    if (widget.initialDate != null) {
+      _focusedDay = widget.initialDate!;
+      _selectedDay = DateTime(widget.initialDate!.year, widget.initialDate!.month, widget.initialDate!.day);
+    }
+
     if (widget.predictionData == null) {
       _isLoadingPredictions = true;
       _loadPredictions();
@@ -110,6 +117,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     DateTime ovulationDate = DateTime.parse(_predictionData['ovulation_date'] ?? DateTime.now().toIso8601String());
     DateTime fertileStart = DateTime.parse(_predictionData['fertile_window']?['start'] ?? DateTime.now().toIso8601String());
+    DateTime fertileEnd = DateTime.parse(_predictionData['fertile_window']?['end'] ?? DateTime.now().toIso8601String());
     
     int ovulationDay = ovulationDate.difference(lastPeriodStart).inDays + 1;
     while (ovulationDay > avgCycle) ovulationDay -= avgCycle;
@@ -119,11 +127,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
     while (fertileDay > avgCycle) fertileDay -= avgCycle;
     while (fertileDay <= 0) fertileDay += avgCycle;
 
+    int fertileEndDay = fertileEnd.difference(lastPeriodStart).inDays + 1;
+    while (fertileEndDay > avgCycle) fertileEndDay -= avgCycle;
+    while (fertileEndDay <= 0) fertileEndDay += avgCycle;
+
     return CycleUtils.getPhaseInfo(
       currentCycleDay: currentCycleDay,
       avgCycle: avgCycle,
       periodDuration: periodDuration,
       fertileDay: fertileDay,
+      fertileEndDay: fertileEndDay,
       ovulationDay: ovulationDay,
     );
   }

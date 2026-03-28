@@ -7,7 +7,6 @@ import 'widgets/birthday_page.dart';
 import 'widgets/cycle_duration_page.dart';
 import 'widgets/last_period_page.dart';
 import 'widgets/period_duration_page.dart';
-import 'widgets/ripple_painter.dart';
 import '../../core/widgets/cycle_loading_button.dart';
 
 class CycleSetupScreen extends StatefulWidget {
@@ -30,9 +29,6 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> with TickerProvider
   final PageController _pageController = PageController();
   int _currentPage = 0;
   
-  // Animation Controller for Ripple Effect
-  late AnimationController _rippleController;
-
   // State variables for the inputs
   int _cycleDuration = 28;
   int _periodDuration = 5;
@@ -51,25 +47,26 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> with TickerProvider
   @override
   void initState() {
     super.initState();
-    _rippleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    );
   }
 
   @override
   void dispose() {
     _pageController.dispose();
-    _rippleController.dispose();
     super.dispose();
   }
 
-  void _onNextTap() {
+  void _onNextTap() async {
     if (_isLoading) return;
     
-    _rippleController.forward(from: 0.0).then((_) {
-      _nextPage();
-    });
+    // Only show artificial delay for intermediate step transitions
+    if (_currentPage < 3) {
+      setState(() => _isLoading = true);
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    }
+
+    _nextPage();
   }
 
   void _nextPage() {
@@ -144,7 +141,9 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> with TickerProvider
     return Scaffold(
       backgroundColor: const Color(0xFFFFF0F5),
       body: SafeArea(
-        child: Stack(
+        child: WillPopScope(
+          onWillPop: () async => !_isLoading,
+          child: Stack(
           children: [
             Column(
               children: [
@@ -204,6 +203,8 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> with TickerProvider
                         width: 70,
                         height: 70,
                         loadingColor: Colors.white,
+                        showBorderAnimation: false,
+                        useBorealisAnimation: true,
                       ),
                 const SizedBox(height: 40),
               ],
@@ -225,7 +226,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> with TickerProvider
                 ),
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: Colors.black),
-                  onPressed: () {
+                  onPressed: _isLoading ? null : () {
                     if (_currentPage > 0) {
                        _pageController.previousPage(
                           duration: const Duration(milliseconds: 300),
@@ -239,6 +240,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> with TickerProvider
               ),
             ),
           ],
+        ),
         ),
       ),
     );

@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 
-class PredictionCard extends StatelessWidget {
+class PredictionCard extends StatefulWidget {
   final Map<String, dynamic>? predictionData;
   final void Function(String type)? onTap;
+  final void Function(String type)? onCardTap;
 
-  const PredictionCard({super.key, required this.predictionData, this.onTap});
+  const PredictionCard({super.key, required this.predictionData, this.onTap, this.onCardTap});
 
+  @override
+  State<PredictionCard> createState() => _PredictionCardState();
+}
+
+class _PredictionCardState extends State<PredictionCard> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     // Extraction helper
-    String formatDate(String? dateStr) {
+    String formatDate(String? dateStr, {String? endDateStr}) {
       if (dateStr == null) return "Pendiente";
       try {
         final date = DateTime.parse(dateStr);
@@ -17,6 +23,17 @@ class PredictionCard extends StatelessWidget {
           "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
           "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
         ];
+
+        if (endDateStr != null) {
+          final endDate = DateTime.parse(endDateStr);
+          if (date.month == endDate.month) {
+            return "${date.day} - ${endDate.day} de ${months[date.month - 1]}";
+          } else {
+             final shortMonths = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+             return "${date.day} ${shortMonths[date.month - 1]} - ${endDate.day} ${shortMonths[endDate.month - 1]}";
+          }
+        }
+
         return "${date.day} de ${months[date.month - 1]}";
       } catch (e) {
         return "Fecha inválida";
@@ -46,29 +63,35 @@ class PredictionCard extends StatelessWidget {
       children: [
         _buildCard(
           title: "Ventana Fértil",
-          date: formatDate(predictionData?['fertile_window']?['start']),
-          subtitle: getDaysRemaining(predictionData?['fertile_window']?['start']),
+          date: formatDate(
+            widget.predictionData?['fertile_window']?['start'],
+            endDateStr: widget.predictionData?['fertile_window']?['end'],
+          ),
+          subtitle: getDaysRemaining(widget.predictionData?['fertile_window']?['start']),
           color: const Color(0xFFD4E2FF),
           bubbleOnLeft: true,
-          onTap: () => onTap?.call("fertile"),
+          type: "fertile",
+          index: 0,
         ),
         const SizedBox(height: 12),
         _buildCard(
           title: "Predicción Ovulación",
-          date: formatDate(predictionData?['ovulation_date']),
-          subtitle: getDaysRemaining(predictionData?['ovulation_date']),
+          date: formatDate(widget.predictionData?['ovulation_date']),
+          subtitle: getDaysRemaining(widget.predictionData?['ovulation_date']),
           color: const Color(0xFFFFE5E9),
           bubbleOnLeft: true,
-          onTap: () => onTap?.call("ovulation"),
+          type: "ovulation",
+          index: 1,
         ),
         const SizedBox(height: 12),
         _buildCard(
           title: "Próxima Menstruación",
-          date: formatDate(predictionData?['next_period_start']),
-          subtitle: getDaysRemaining(predictionData?['next_period_start']),
+          date: formatDate(widget.predictionData?['next_period_start']),
+          subtitle: getDaysRemaining(widget.predictionData?['next_period_start']),
           color: const Color(0xFFEBD8F5),
           bubbleOnLeft: true,
-          onTap: () => onTap?.call("period"),
+          type: "period",
+          index: 2,
         ),
       ],
     );
@@ -80,59 +103,47 @@ class PredictionCard extends StatelessWidget {
     required String subtitle,
     required Color color,
     required bool bubbleOnLeft,
-    VoidCallback? onTap,
+    required String type,
+    required int index,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        height: 85,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(40),
-        ),
-        padding: const EdgeInsets.all(8),
-        child: Row(
-          children: [
-            if (bubbleOnLeft) ...[
-              _buildBubble(title),
-              Expanded(child: _buildCardDateInfo(date, subtitle, false)),
-            ] else ...[
-              Expanded(child: _buildCardDateInfo(date, subtitle, true)),
-              _buildBubble(title),
-            ]
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBubble(String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      constraints: const BoxConstraints(minWidth: 130, maxWidth: 160),
-      height: double.infinity,
+      width: double.infinity,
+      height: 85,
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(160),
-        borderRadius: BorderRadius.circular(35),
-        border: Border.all(color: Colors.white.withAlpha(180), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: color,
+        borderRadius: BorderRadius.circular(40),
       ),
-      alignment: Alignment.center,
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold, 
-          fontSize: 12,
-          color: Colors.black,
-        ),
+      padding: const EdgeInsets.all(8),
+      child: Row(
+        children: [
+          if (bubbleOnLeft) ...[
+            _PredictionBubble(
+              text: title, 
+              index: index, 
+              onTap: () => widget.onTap?.call(type),
+            ),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => widget.onCardTap?.call(type),
+                behavior: HitTestBehavior.opaque,
+                child: _buildCardDateInfo(date, subtitle, false),
+              ),
+            ),
+          ] else ...[
+            Expanded(
+              child: GestureDetector(
+                onTap: () => widget.onCardTap?.call(type),
+                behavior: HitTestBehavior.opaque,
+                child: _buildCardDateInfo(date, subtitle, true),
+              ),
+            ),
+            _PredictionBubble(
+              text: title, 
+              index: index, 
+              onTap: () => widget.onTap?.call(type),
+            ),
+          ]
+        ],
       ),
     );
   }
@@ -153,6 +164,109 @@ class PredictionCard extends StatelessWidget {
             style: TextStyle(color: Colors.black.withAlpha(120), fontSize: 11, fontWeight: FontWeight.w500),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PredictionBubble extends StatefulWidget {
+  final String text;
+  final VoidCallback? onTap;
+  final int index;
+
+  const _PredictionBubble({required this.text, this.onTap, required this.index});
+
+  @override
+  State<_PredictionBubble> createState() => _PredictionBubbleState();
+}
+
+class _PredictionBubbleState extends State<_PredictionBubble> with TickerProviderStateMixin {
+  late AnimationController _entranceController;
+  late Animation<double> _entranceAnimation;
+
+  late AnimationController _bounceController;
+  late Animation<double> _bounceAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // 1. Entrance "Pop up" Animation
+    _entranceController = AnimationController(
+       vsync: this,
+       duration: const Duration(milliseconds: 700),
+    );
+    _entranceAnimation = CurvedAnimation(
+      parent: _entranceController, 
+      curve: Curves.elasticOut,
+    );
+    
+    // Delayed start based on index
+    Future.delayed(Duration(milliseconds: 300 + (widget.index * 150)), () {
+      if (mounted) _entranceController.forward();
+    });
+
+    // 2. Press "Bounce and Enlarge" Animation
+    _bounceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _bounceAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
+      CurvedAnimation(parent: _bounceController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _entranceController.dispose();
+    _bounceController.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() {
+    // Reverse logic for bounce
+    _bounceController.forward().then((_) {
+      _bounceController.reverse();
+    });
+    widget.onTap?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _entranceAnimation,
+      child: ScaleTransition(
+        scale: _bounceAnimation,
+        child: GestureDetector(
+          onTap: _handleTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            constraints: const BoxConstraints(minWidth: 130, maxWidth: 160),
+            height: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white.withAlpha(160),
+              borderRadius: BorderRadius.circular(35),
+              border: Border.all(color: Colors.white.withAlpha(180), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(10),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              widget.text,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold, 
+                fontSize: 12,
+                color: Colors.black,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
