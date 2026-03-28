@@ -293,14 +293,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     });
                     _loadStats(chartToLoad: 'registrations');
                   },
+                  onRefreshFailedLogins: () => _loadStats(chartToLoad: 'failedLogins'),
+                  onRefreshRegistrations: () => _loadStats(chartToLoad: 'registrations'),
                 ),
                 UsersTabView(
                   users: _users,
                   isLoadingUsers: _isLoadingUsers,
-                  usersError: null, // Could be stateful if needed
+                  usersError: null,
                   stats: _stats,
                   isStatsLoading: _isFailedLoginsLoading || _isRegistrationsLoading,
                   onRefreshUsers: _loadUsers,
+                  onRefreshStats: () => _loadStats(chartToLoad: 'both'),
                   onViewAllUsers: () {
                     Navigator.push(
                       context,

@@ -10,6 +10,7 @@ class ChartCard extends StatelessWidget {
   final String? dateRange;
   final VoidCallback? onPrev;
   final VoidCallback? onNext;
+  final VoidCallback? onActionTap;
 
   const ChartCard({
     super.key,
@@ -22,6 +23,7 @@ class ChartCard extends StatelessWidget {
     this.dateRange,
     this.onPrev,
     this.onNext,
+    this.onActionTap,
   });
 
   @override
@@ -49,13 +51,16 @@ class ChartCard extends StatelessWidget {
               ),
               Align(
                 alignment: Alignment.topRight,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: actionColor.withAlpha((0.15 * 255).toInt()),
-                    shape: BoxShape.circle,
+                child: GestureDetector(
+                  onTap: onActionTap,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: actionColor.withAlpha((0.15 * 255).toInt()),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(actionIcon, size: 18, color: actionColor),
                   ),
-                  child: Icon(actionIcon, size: 18, color: actionColor),
                 ),
               ),
             ],

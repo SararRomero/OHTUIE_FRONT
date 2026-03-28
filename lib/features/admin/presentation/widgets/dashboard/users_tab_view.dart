@@ -14,6 +14,7 @@ class UsersTabView extends StatelessWidget {
   final bool isStatsLoading;
   final VoidCallback onRefreshUsers;
   final VoidCallback onViewAllUsers;
+  final VoidCallback onRefreshStats;
 
   const UsersTabView({
     super.key,
@@ -24,6 +25,7 @@ class UsersTabView extends StatelessWidget {
     required this.isStatsLoading,
     required this.onRefreshUsers,
     required this.onViewAllUsers,
+    required this.onRefreshStats,
   });
 
   @override
@@ -43,6 +45,7 @@ class UsersTabView extends StatelessWidget {
             actionColor: Colors.orange,
             loadingColor: Colors.orange,
             isLoading: isStatsLoading,
+            onActionTap: onRefreshStats,
           ),
           const SizedBox(height: 16),
           AdvancedStatsCard(stats: stats),
@@ -54,6 +57,7 @@ class UsersTabView extends StatelessWidget {
             actionColor: Colors.deepPurple,
             loadingColor: Colors.deepPurple,
             isLoading: isStatsLoading,
+            onActionTap: onRefreshStats,
           ),
           const SizedBox(height: 16),
           ChartCard(
@@ -63,6 +67,7 @@ class UsersTabView extends StatelessWidget {
             actionColor: Colors.purple[300]!,
             loadingColor: Colors.purple[300]!,
             isLoading: isStatsLoading,
+            onActionTap: onRefreshStats,
           ),
         ],
       ),

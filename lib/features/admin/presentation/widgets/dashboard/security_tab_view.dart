@@ -19,6 +19,8 @@ class SecurityTabView extends StatelessWidget {
   final VoidCallback onFailedLoginNext;
   final VoidCallback onRegistrationPrev;
   final VoidCallback onRegistrationNext;
+  final VoidCallback onRefreshFailedLogins;
+  final VoidCallback onRefreshRegistrations;
 
   const SecurityTabView({
     super.key,
@@ -36,6 +38,8 @@ class SecurityTabView extends StatelessWidget {
     required this.onFailedLoginNext,
     required this.onRegistrationPrev,
     required this.onRegistrationNext,
+    required this.onRefreshFailedLogins,
+    required this.onRefreshRegistrations,
   });
 
   @override
@@ -60,6 +64,7 @@ class SecurityTabView extends StatelessWidget {
             dateRange: dateRangeFormatter(failedLoginsWeekOffset),
             onPrev: onFailedLoginPrev,
             onNext: onFailedLoginNext,
+            onActionTap: onRefreshFailedLogins,
           ),
           const SizedBox(height: 16),
           SecurityStatsSection(stats: stats),
@@ -80,6 +85,7 @@ class SecurityTabView extends StatelessWidget {
             dateRange: dateRangeFormatter(registrationsWeekOffset),
             onPrev: onRegistrationPrev,
             onNext: onRegistrationNext,
+            onActionTap: onRefreshRegistrations,
           ),
           const SizedBox(height: 16),
           RegistrationStatsSection(stats: stats),

@@ -170,12 +170,12 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
               ),
               const SizedBox(height: 32),
               
-              _buildSectionHeader('Acciones Rápidas', Icons.grid_view_rounded),
+              _buildSectionHeader('Acciones Rápidas', Icons.grid_view_rounded, showRefresh: true),
               const SizedBox(height: 16),
               _buildQuickActionsGrid(),
               
               const SizedBox(height: 32),
-              _buildSectionHeader('Distribución Demográfica', Icons.pie_chart_outline),
+              _buildSectionHeader('Distribución Demográfica', Icons.pie_chart_outline, showRefresh: true),
               const SizedBox(height: 16),
               Container(
                 height: 220,
@@ -197,12 +197,12 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
               ),
               
               const SizedBox(height: 32),
-              _buildSectionHeader('Actividad Reciente', Icons.bolt_rounded),
+              _buildSectionHeader('Actividad Reciente', Icons.bolt_rounded, showRefresh: true),
               const SizedBox(height: 16),
               _buildActivityTimeline(),
 
               const SizedBox(height: 32),
-              _buildSectionHeader('Seguridad', Icons.shield_outlined),
+              _buildSectionHeader('Seguridad', Icons.shield_outlined, showRefresh: true),
               const SizedBox(height: 16),
               
               // Security Alerts Section
@@ -288,7 +288,7 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
               ),
               
               const SizedBox(height: 32),
-              _buildSectionHeader('Infraestructura', Icons.developer_board_rounded),
+              _buildSectionHeader('Infraestructura', Icons.developer_board_rounded, showRefresh: true),
               const SizedBox(height: 16),
               
               SystemHealthWidget(
@@ -308,7 +308,7 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon) {
+  Widget _buildSectionHeader(String title, IconData icon, {bool showRefresh = false}) {
     return Row(
       children: [
         Container(
@@ -328,6 +328,20 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
             color: Colors.black87,
           ),
         ),
+        if (showRefresh) ...[
+          const Spacer(),
+          GestureDetector(
+            onTap: _loadAllData,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.refresh_rounded, size: 16, color: Colors.black54),
+            ),
+          ),
+        ],
       ],
     );
   }

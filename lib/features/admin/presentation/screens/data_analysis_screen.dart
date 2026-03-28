@@ -77,7 +77,7 @@ class _DataAnalysisScreenState extends State<DataAnalysisScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSectionHeader('Pulso de Usuario', Icons.analytics_rounded),
+              _buildSectionHeader('Pulso de Usuario', Icons.analytics_rounded, showRefresh: true),
               const SizedBox(height: 16),
               // Analysis KPIs
               SizedBox(
@@ -117,17 +117,17 @@ class _DataAnalysisScreenState extends State<DataAnalysisScreen> {
               ),
               const SizedBox(height: 32),
               
-              _buildSectionHeader('Participación por Funciones', Icons.pie_chart_rounded),
+              _buildSectionHeader('Participación por Funciones', Icons.pie_chart_rounded, showRefresh: true),
               const SizedBox(height: 16),
               _buildEngagementChart(),
               
               const SizedBox(height: 32),
-              _buildSectionHeader('Embudo de Conversión', Icons.filter_list_rounded),
+              _buildSectionHeader('Embudo de Conversión', Icons.filter_list_rounded, showRefresh: true),
               const SizedBox(height: 16),
               _buildConversionFunnel(),
 
               const SizedBox(height: 32),
-              _buildSectionHeader('Perspectivas de Sentimiento', Icons.mood_rounded),
+              _buildSectionHeader('Perspectivas de Sentimiento', Icons.mood_rounded, showRefresh: true),
               const SizedBox(height: 16),
               _buildSentimentAnalysis(),
               
@@ -139,7 +139,7 @@ class _DataAnalysisScreenState extends State<DataAnalysisScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon) {
+  Widget _buildSectionHeader(String title, IconData icon, {bool showRefresh = false}) {
     return Row(
       children: [
         Container(
@@ -159,6 +159,20 @@ class _DataAnalysisScreenState extends State<DataAnalysisScreen> {
             color: Colors.black87,
           ),
         ),
+        if (showRefresh) ...[
+          const Spacer(),
+          GestureDetector(
+            onTap: _loadAnalysisData,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.refresh_rounded, size: 16, color: Colors.black54),
+            ),
+          ),
+        ],
       ],
     );
   }
