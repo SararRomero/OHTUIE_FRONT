@@ -4,6 +4,8 @@ import '../widgets/dashboard/security_tab_view.dart';
 import '../widgets/dashboard/users_tab_view.dart';
 import 'admin_settings_screen.dart';
 import 'users_list_screen.dart';
+import '../../../../core/widgets/session_expired_modal.dart';
+
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -22,6 +24,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   bool _isLoadingUsers = false;
   bool _isFailedLoginsLoading = false;
   bool _isRegistrationsLoading = false;
+  bool _isAgeLoading = false;
+  bool _isRetentionLoading = false;
+  bool _isCalendarLoading = false;
   Map<String, dynamic>? _stats;
   List<dynamic> _users = [];
   bool _serverDown = false;
@@ -34,6 +39,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     _tabController = TabController(length: 2, vsync: this);
     _loadStats();
     _loadUsers();
+  }
+
+  void _showSessionExpired() {
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.black.withOpacity(0.3),
+        builder: (context) => const SessionExpiredModal(),
+      );
+    }
   }
 
   Future<void> _loadUsers() async {
@@ -51,6 +67,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         setState(() {
           _isLoadingUsers = false;
         });
+        final msg = result['message']?.toString().toLowerCase() ?? '';
+        if (msg.contains('credentials') || msg.contains('unauthorized') || msg.contains('401') || msg.contains('authenticated') || msg.contains('token')) {
+          _showSessionExpired();
+        }
       }
     }
   }
@@ -62,6 +82,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       }
       if (chartToLoad == 'both' || chartToLoad == 'registrations') {
         _isRegistrationsLoading = true;
+      }
+      if (chartToLoad == 'both' || chartToLoad == 'age') {
+        _isAgeLoading = true;
+      }
+      if (chartToLoad == 'both' || chartToLoad == 'retention') {
+        _isRetentionLoading = true;
+      }
+      if (chartToLoad == 'both' || chartToLoad == 'calendar') {
+        _isCalendarLoading = true;
       }
       _serverDown = false;
     });
@@ -109,6 +138,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           _isLoading = false;
           _isFailedLoginsLoading = false;
           _isRegistrationsLoading = false;
+          _isAgeLoading = false;
+          _isRetentionLoading = false;
+          _isCalendarLoading = false;
         });
       } else {
         setState(() {
@@ -117,15 +149,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           _isLoading = false;
           _isFailedLoginsLoading = false;
           _isRegistrationsLoading = false;
+          _isAgeLoading = false;
+          _isRetentionLoading = false;
+          _isCalendarLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text('No se pudo conectar al servidor: ${result["message"]}'),
-            backgroundColor: Colors.orange[700],
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        final msg = result['message']?.toString().toLowerCase() ?? '';
+        if (msg.contains('credentials') || msg.contains('unauthorized') || msg.contains('401') || msg.contains('authenticated') || msg.contains('token')) {
+          _showSessionExpired();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+                  Text('No se pudo conectar al servidor: ${result["message"]}'),
+              backgroundColor: Colors.orange[700],
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
       }
     }
   }
@@ -220,6 +260,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       ),
       body: Column(
         children: [
+          if (_isLoading)
+            const LinearProgressIndicator(color: Colors.blue, backgroundColor: Colors.transparent, minHeight: 2)
+          else
+            Container(height: 2, color: Colors.transparent),
           if (_serverDown)
             Material(
               color: Colors.orange[700],
@@ -301,9 +345,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   isLoadingUsers: _isLoadingUsers,
                   usersError: null,
                   stats: _stats,
-                  isStatsLoading: _isFailedLoginsLoading || _isRegistrationsLoading,
+                  isAgeLoading: _isAgeLoading,
+                  isRetentionLoading: _isRetentionLoading,
+                  isCalendarLoading: _isCalendarLoading,
                   onRefreshUsers: _loadUsers,
-                  onRefreshStats: () => _loadStats(chartToLoad: 'both'),
+                  onRefreshAge: () => _loadStats(chartToLoad: 'age'),
+                  onRefreshRetention: () => _loadStats(chartToLoad: 'retention'),
+                  onRefreshCalendar: () => _loadStats(chartToLoad: 'calendar'),
                   onViewAllUsers: () {
                     Navigator.push(
                       context,

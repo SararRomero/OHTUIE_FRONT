@@ -203,7 +203,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> with TickerProvider
                         width: 70,
                         height: 70,
                         loadingColor: Colors.white,
-                        showBorderAnimation: false,
+                        showBorderAnimation: true,
                         useBorealisAnimation: true,
                       ),
                 const SizedBox(height: 40),

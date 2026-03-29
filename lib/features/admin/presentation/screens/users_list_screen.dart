@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/cycle_loading_button.dart';
 import '../../data/admin_service.dart';
 
 class UsersListScreen extends StatefulWidget {
@@ -149,6 +150,12 @@ class _UsersListScreenState extends State<UsersListScreen> {
             ),
           ),
         ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(2),
+          child: _isLoading 
+            ? const LinearProgressIndicator(color: Colors.blue, backgroundColor: Colors.transparent, minHeight: 2)
+            : Container(height: 2, color: Colors.transparent),
+        ),
       ),
       body: Column(
         children: [
@@ -169,8 +176,8 @@ class _UsersListScreenState extends State<UsersListScreen> {
             ),
           ),
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF4081)))
+            child: (_isLoading && _users.isEmpty)
+                ? const SizedBox.shrink()
                 : _users.isEmpty
                     ? Center(
                         child: Column(
@@ -516,10 +523,13 @@ class _UsersListScreenState extends State<UsersListScreen> {
   void _showEditUserDialog(Map<String, dynamic> user) {
     final nameController = TextEditingController(text: user['full_name']);
     final emailController = TextEditingController(text: user['email']);
+    bool isSaving = false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text('Editar Usuario', style: TextStyle(fontWeight: FontWeight.bold)),
         content: SizedBox(
@@ -559,21 +569,29 @@ class _UsersListScreenState extends State<UsersListScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: isSaving ? null : () => Navigator.pop(context),
             child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF4081),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+          CycleLoadingButton(
+            text: 'Guardar',
+            isLoading: isSaving,
+            backgroundColor: const Color(0xFFFF4081),
+            loadingColor: const Color(0xFFFF4081),
+            width: 100,
+            height: 40,
+            fontSize: 14,
+            borderRadius: 12,
+            showBorderAnimation: true,
+            useBorealisAnimation: false,
             onPressed: () async {
+              setDialogState(() => isSaving = true);
               final messenger = ScaffoldMessenger.of(context);
               final result = await AdminService.updateUser(user['id'], {
                 'full_name': nameController.text,
                 'email': emailController.text,
               });
               if (!mounted) return;
+              setDialogState(() => isSaving = false);
               Navigator.pop(context);
               if (result['success']) {
                 _loadUsers(refresh: true);
@@ -582,9 +600,9 @@ class _UsersListScreenState extends State<UsersListScreen> {
                 messenger.showSnackBar(SnackBar(content: Text(result['message']), backgroundColor: Colors.red));
               }
             },
-            child: const Text('Guardar', style: TextStyle(color: Colors.white)),
           ),
         ],
+      ),
       ),
     );
   }
@@ -594,10 +612,13 @@ class _UsersListScreenState extends State<UsersListScreen> {
     final action = isActive ? "Bloquear" : "Desbloquear";
     final actionColor = isActive ? Colors.orange : Colors.green;
     final passwordController = TextEditingController();
+    bool isSaving = false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text('$action Usuario', style: const TextStyle(fontWeight: FontWeight.bold)),
         content: Column(
@@ -623,19 +644,27 @@ class _UsersListScreenState extends State<UsersListScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: isSaving ? null : () => Navigator.pop(context),
             child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: actionColor,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+          CycleLoadingButton(
+            text: action,
+            isLoading: isSaving,
+            backgroundColor: actionColor,
+            loadingColor: actionColor,
+            width: 120,
+            height: 40,
+            fontSize: 14,
+            borderRadius: 12,
+            showBorderAnimation: true,
+            useBorealisAnimation: false,
             onPressed: () async {
+               setDialogState(() => isSaving = true);
                final messenger = ScaffoldMessenger.of(context);
                final verify = await AdminService.verifyAdminPassword(passwordController.text);
                if (!verify['success']) {
                  if (mounted) {
+                    setDialogState(() => isSaving = false);
                     messenger.showSnackBar(SnackBar(content: Text(verify['message']), backgroundColor: Colors.red));
                  }
                  return;
@@ -643,6 +672,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
 
               final result = await AdminService.updateUser(user['id'], {'is_active': !isActive});
               if (!mounted) return;
+              setDialogState(() => isSaving = false);
               Navigator.pop(context);
               if (result['success']) {
                 _loadUsers(refresh: true);
@@ -651,18 +681,21 @@ class _UsersListScreenState extends State<UsersListScreen> {
                 messenger.showSnackBar(SnackBar(content: Text(result['message']), backgroundColor: Colors.red));
               }
             },
-            child: Text(action, style: const TextStyle(color: Colors.white)),
           ),
         ],
+      ),
       ),
     );
   }
 
   void _deleteUser(String userId) {
     final passwordController = TextEditingController();
+    bool isSaving = false;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text('Eliminar Usuario', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
         content: Column(
@@ -688,19 +721,27 @@ class _UsersListScreenState extends State<UsersListScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: isSaving ? null : () => Navigator.pop(context),
             child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+          CycleLoadingButton(
+            text: 'Eliminar',
+            isLoading: isSaving,
+            backgroundColor: Colors.red,
+            loadingColor: Colors.red,
+            width: 100,
+            height: 40,
+            fontSize: 14,
+            borderRadius: 12,
+            showBorderAnimation: true,
+            useBorealisAnimation: false,
             onPressed: () async {
+               setDialogState(() => isSaving = true);
                final messenger = ScaffoldMessenger.of(context);
                final verify = await AdminService.verifyAdminPassword(passwordController.text);
                if (!verify['success']) {
                  if (mounted) {
+                    setDialogState(() => isSaving = false);
                     messenger.showSnackBar(SnackBar(content: Text(verify['message']), backgroundColor: Colors.red));
                  }
                  return;
@@ -708,6 +749,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
 
               final result = await AdminService.deleteUser(userId);
               if (!mounted) return;
+              setDialogState(() => isSaving = false);
               Navigator.pop(context);
               if (result['success']) {
                 _loadUsers(refresh: true);
@@ -716,9 +758,9 @@ class _UsersListScreenState extends State<UsersListScreen> {
                 messenger.showSnackBar(SnackBar(content: Text(result['message']), backgroundColor: Colors.red));
               }
             },
-            child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
           ),
         ],
+      ),
       ),
     );
   }

@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 class SystemHealthWidget extends StatefulWidget {
   final double uptime;
   final String status;
-  final List<Map<String, dynamic>> modules;
+  final int responseTime;
+  final List<dynamic> modules;
 
   const SystemHealthWidget({
     super.key,
     required this.uptime,
     required this.status,
+    required this.responseTime,
     required this.modules,
   });
 
@@ -113,7 +115,7 @@ class _SystemHealthWidgetState extends State<SystemHealthWidget> with SingleTick
               Expanded(
                 child: _buildHealthMetric(
                   'Tiempo Respuesta',
-                  '18ms',
+                  '${widget.responseTime}ms',
                   Icons.bolt,
                   Colors.orange,
                 ),

@@ -34,6 +34,33 @@ class AdminService {
     }
   }
 
+  static Future<Map<String, dynamic>> getSystemHealth() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      
+      final response = await ApiClient.get("/admin/system-health", token: token);
+      
+      if (response.statusCode == 200) {
+        return {
+          "success": true,
+          "data": jsonDecode(response.body)
+        };
+      } else {
+        final error = jsonDecode(response.body);
+        return {
+          "success": false,
+          "message": error['detail'] ?? "Error fetching system health"
+        };
+      }
+    } catch (e) {
+      return {
+        "success": false,
+        "message": "Connection error: $e"
+      };
+    }
+  }
+
   static Future<Map<String, dynamic>> getStatistics({
     String? fStart, String? fEnd,
     String? rStart, String? rEnd,
@@ -242,7 +269,14 @@ class AdminService {
           ..createSync(recursive: true)
           ..writeAsBytesSync(fileBytes);
         
-        // 4. Open file
+        // 4. Log the action
+        await logAuditAction(
+          "Exportación de datos de usuarias", 
+          "Total: ${users.length} registros", 
+          "data_export"
+        );
+
+        // 5. Open file
         await OpenFilex.open(filePath);
         
         return {
@@ -255,6 +289,23 @@ class AdminService {
       }
     } catch (e) {
       return {"success": false, "message": "Error durante la exportación: $e"};
+    }
+  }
+
+  static Future<void> logAuditAction(String action, String detail, String type) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      
+      await ApiClient.post("/admin/audit-log", {
+        "event_type": type,
+        "description": "$action: $detail",
+      }, headers: {
+        "Authorization": "Bearer $token",
+      });
+    } catch (e) {
+      // Quiet background log
+      print("Audit Log failed: $e");
     }
   }
 }

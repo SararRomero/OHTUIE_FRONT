@@ -12,6 +12,8 @@ class SecurityStatsScreen extends StatefulWidget {
 
 class _SecurityStatsScreenState extends State<SecurityStatsScreen> {
   bool _isLoading = true;
+  bool _isLoadingDist = false;
+  bool _isLoadingAudit = false;
   Map<String, dynamic>? _securityData;
 
   @override
@@ -31,6 +33,32 @@ class _SecurityStatsScreenState extends State<SecurityStatsScreen> {
           _securityData = result['data'];
         }
         _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadDist() async {
+    setState(() => _isLoadingDist = true);
+    final result = await AdminService.getSecurityStats();
+    if (mounted) {
+      setState(() {
+        if (result['success']) {
+          _securityData = result['data'];
+        }
+        _isLoadingDist = false;
+      });
+    }
+  }
+
+  Future<void> _loadAudit() async {
+    setState(() => _isLoadingAudit = true);
+    final result = await AdminService.getSecurityStats();
+    if (mounted) {
+      setState(() {
+        if (result['success']) {
+          _securityData = result['data'];
+        }
+        _isLoadingAudit = false;
       });
     }
   }
@@ -66,6 +94,12 @@ class _SecurityStatsScreenState extends State<SecurityStatsScreen> {
               child: const Icon(Icons.chevron_left, color: Colors.black, size: 24),
             ),
           ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(2),
+          child: _isLoading 
+            ? const LinearProgressIndicator(color: Colors.blue, backgroundColor: Colors.transparent, minHeight: 2)
+            : Container(height: 2, color: Colors.transparent),
         ),
       ),
       body: RefreshIndicator(
@@ -116,12 +150,12 @@ class _SecurityStatsScreenState extends State<SecurityStatsScreen> {
               ),
               const SizedBox(height: 32),
               
-              _buildSectionHeader('Distribución de Riesgos', Icons.pie_chart_rounded, showRefresh: true),
+              _buildSectionHeader('Distribución de Riesgos', Icons.pie_chart_rounded, showRefresh: true, onRefresh: _loadDist),
               const SizedBox(height: 16),
               _buildThreatChart(),
               
               const SizedBox(height: 32),
-              _buildSectionHeader('Registro de Auditoría', Icons.history_edu_rounded, showRefresh: true),
+              _buildSectionHeader('Registro de Auditoría', Icons.history_edu_rounded, showRefresh: true, onRefresh: _loadAudit),
               const SizedBox(height: 16),
               _buildSecurityAuditLog(),
               
@@ -133,7 +167,7 @@ class _SecurityStatsScreenState extends State<SecurityStatsScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon, {bool showRefresh = false}) {
+  Widget _buildSectionHeader(String title, IconData icon, {bool showRefresh = false, VoidCallback? onRefresh}) {
     return Row(
       children: [
         Container(
@@ -156,7 +190,7 @@ class _SecurityStatsScreenState extends State<SecurityStatsScreen> {
         if (showRefresh) ...[
           const Spacer(),
           GestureDetector(
-            onTap: _loadSecurityData,
+            onTap: onRefresh ?? _loadSecurityData,
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -192,7 +226,7 @@ class _SecurityStatsScreenState extends State<SecurityStatsScreen> {
           ),
         ],
       ),
-      child: _isLoading
+      child: (_isLoading || _isLoadingDist)
           ? const Center(child: CircularProgressIndicator())
           : Row(
               children: [
@@ -275,7 +309,7 @@ class _SecurityStatsScreenState extends State<SecurityStatsScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
       ),
-      child: _isLoading 
+      child: (_isLoading || _isLoadingAudit) 
         ? const Center(child: CircularProgressIndicator())
         : logs.isEmpty
           ? const Center(child: Text('No hay registros de auditoría', style: TextStyle(color: Colors.grey)))

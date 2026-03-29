@@ -11,10 +11,14 @@ class UsersTabView extends StatelessWidget {
   final bool isLoadingUsers;
   final String? usersError;
   final Map<String, dynamic>? stats;
-  final bool isStatsLoading;
+  final bool isAgeLoading;
+  final bool isRetentionLoading;
+  final bool isCalendarLoading;
   final VoidCallback onRefreshUsers;
   final VoidCallback onViewAllUsers;
-  final VoidCallback onRefreshStats;
+  final VoidCallback onRefreshAge;
+  final VoidCallback onRefreshRetention;
+  final VoidCallback onRefreshCalendar;
 
   const UsersTabView({
     super.key,
@@ -22,10 +26,14 @@ class UsersTabView extends StatelessWidget {
     required this.isLoadingUsers,
     required this.usersError,
     required this.stats,
-    required this.isStatsLoading,
+    required this.isAgeLoading,
+    required this.isRetentionLoading,
+    required this.isCalendarLoading,
     required this.onRefreshUsers,
     required this.onViewAllUsers,
-    required this.onRefreshStats,
+    required this.onRefreshAge,
+    required this.onRefreshRetention,
+    required this.onRefreshCalendar,
   });
 
   @override
@@ -44,8 +52,8 @@ class UsersTabView extends StatelessWidget {
             actionIcon: Icons.analytics_outlined,
             actionColor: Colors.orange,
             loadingColor: Colors.orange,
-            isLoading: isStatsLoading,
-            onActionTap: onRefreshStats,
+            isLoading: isAgeLoading,
+            onActionTap: onRefreshAge,
           ),
           const SizedBox(height: 16),
           AdvancedStatsCard(stats: stats),
@@ -56,8 +64,8 @@ class UsersTabView extends StatelessWidget {
             actionIcon: Icons.donut_large_rounded,
             actionColor: Colors.deepPurple,
             loadingColor: Colors.deepPurple,
-            isLoading: isStatsLoading,
-            onActionTap: onRefreshStats,
+            isLoading: isRetentionLoading,
+            onActionTap: onRefreshRetention,
           ),
           const SizedBox(height: 16),
           ChartCard(
@@ -66,8 +74,8 @@ class UsersTabView extends StatelessWidget {
             actionIcon: Icons.calendar_month_rounded,
             actionColor: Colors.purple[300]!,
             loadingColor: Colors.purple[300]!,
-            isLoading: isStatsLoading,
-            onActionTap: onRefreshStats,
+            isLoading: isCalendarLoading,
+            onActionTap: onRefreshCalendar,
           ),
         ],
       ),

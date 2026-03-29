@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../data/admin_service.dart';
 import '../widgets/shared/kpi_card.dart';
 import '../widgets/shared/system_health_widget.dart';
-import '../widgets/charts/age_distribution_chart.dart';
 
 class GlobalReportsScreen extends StatefulWidget {
   const GlobalReportsScreen({super.key});
@@ -13,8 +12,13 @@ class GlobalReportsScreen extends StatefulWidget {
 
 class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
   bool _isLoading = true;
+  bool _isLoadingActivity = false;
+  bool _isLoadingSecurity = false;
+  bool _isLoadingHealth = false;
   Map<String, dynamic>? _stats;
   Map<String, dynamic>? _userCounts;
+  Map<String, dynamic>? _securityStats;
+  Map<String, dynamic>? _systemHealth;
 
   @override
   void initState() {
@@ -29,13 +33,50 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
     final results = await Future.wait([
       AdminService.getStatistics(),
       AdminService.getUserCounts(),
+      AdminService.getSecurityStats(),
+      AdminService.getSystemHealth(),
     ]);
 
     if (mounted) {
       setState(() {
         if (results[0]['success']) _stats = results[0]['data'];
         if (results[1]['success']) _userCounts = results[1]['data'];
+        if (results[2]['success']) _securityStats = results[2]['data'];
+        if (results[3]['success']) _systemHealth = results[3]['data'];
         _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadActivity() async {
+    setState(() => _isLoadingActivity = true);
+    final result = await AdminService.getSecurityStats();
+    if (mounted) {
+      setState(() {
+        if (result['success']) _securityStats = result['data'];
+        _isLoadingActivity = false;
+      });
+    }
+  }
+
+  Future<void> _loadSecurity() async {
+    setState(() => _isLoadingSecurity = true);
+    final result = await AdminService.getStatistics();
+    if (mounted) {
+      setState(() {
+        if (result['success']) _stats = result['data'];
+        _isLoadingSecurity = false;
+      });
+    }
+  }
+
+  Future<void> _loadHealth() async {
+    setState(() => _isLoadingHealth = true);
+    final result = await AdminService.getSystemHealth();
+    if (mounted) {
+      setState(() {
+        if (result['success']) _systemHealth = result['data'];
+        _isLoadingHealth = false;
       });
     }
   }
@@ -114,6 +155,12 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
             ),
           ),
         ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(2),
+          child: _isLoading
+            ? const LinearProgressIndicator(color: Colors.blue, backgroundColor: Colors.transparent, minHeight: 2)
+            : Container(height: 2, color: Colors.transparent),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _loadAllData,
@@ -141,7 +188,7 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
                   children: [
                     KPICard(
                       title: 'Usuarias Totales',
-                      value: _isLoading ? '...' : '${_userCounts?['total'] ?? 0}',
+                      value: _isLoading ? '...' : '${_userCounts?['all'] ?? 0}',
                       subtitle: '+12% este mes',
                       icon: Icons.people_outline,
                       color: Colors.blue,
@@ -159,7 +206,7 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
                     const SizedBox(width: 16),
                     KPICard(
                       title: 'Alertas Seg.',
-                      value: _isLoading ? '...' : '${_stats?['failed_logins']?.length ?? 0}',
+                      value: _isLoading ? '...' : '${_stats?['failed_logins_24h'] ?? 0}',
                       subtitle: 'Últimas 24h',
                       icon: Icons.security_outlined,
                       color: Colors.redAccent,
@@ -169,40 +216,12 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              
-              _buildSectionHeader('Acciones Rápidas', Icons.grid_view_rounded, showRefresh: true),
-              const SizedBox(height: 16),
-              _buildQuickActionsGrid(),
-              
-              const SizedBox(height: 32),
-              _buildSectionHeader('Distribución Demográfica', Icons.pie_chart_outline, showRefresh: true),
-              const SizedBox(height: 16),
-              Container(
-                height: 220,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: _isLoading 
-                  ? const Center(child: CircularProgressIndicator()) 
-                  : AgeDistributionChart(ageData: _stats?['age_distribution']),
-              ),
-              
-              const SizedBox(height: 32),
-              _buildSectionHeader('Actividad Reciente', Icons.bolt_rounded, showRefresh: true),
+              _buildSectionHeader('Actividad Reciente', Icons.bolt_rounded, showRefresh: true, onRefresh: _loadActivity),
               const SizedBox(height: 16),
               _buildActivityTimeline(),
 
               const SizedBox(height: 32),
-              _buildSectionHeader('Seguridad', Icons.shield_outlined, showRefresh: true),
+              _buildSectionHeader('Seguridad', Icons.shield_outlined, showRefresh: true, onRefresh: _loadSecurity),
               const SizedBox(height: 16),
               
               // Security Alerts Section
@@ -237,7 +256,7 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    if (_isLoading)
+                    if (_isLoading || _isLoadingSecurity)
                       const Center(child: Padding(
                         padding: EdgeInsets.all(10.0),
                         child: CircularProgressIndicator(),
@@ -288,16 +307,17 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
               ),
               
               const SizedBox(height: 32),
-              _buildSectionHeader('Infraestructura', Icons.developer_board_rounded, showRefresh: true),
+              _buildSectionHeader('Infraestructura', Icons.developer_board_rounded, showRefresh: true, onRefresh: _loadHealth),
               const SizedBox(height: 16),
               
               SystemHealthWidget(
-                uptime: 99.9,
-                status: 'Operativo',
-                modules: [
-                  {'name': 'Auth API', 'healthy': true},
-                  {'name': 'Master DB', 'healthy': true},
-                  {'name': 'Cloud Storage', 'healthy': true},
+                uptime: (_systemHealth?['uptime'] ?? 99.9).toDouble(),
+                status: _isLoadingHealth ? 'Actualizando' : (_systemHealth?['status'] ?? 'Cargando'),
+                responseTime: _systemHealth?['response_time_ms'] ?? 0,
+                modules: _systemHealth?['modules'] ?? [
+                  {'name': 'Auth API', 'healthy': false},
+                  {'name': 'Master DB', 'healthy': false},
+                  {'name': 'Cloud Storage', 'healthy': false},
                 ],
               ),
               const SizedBox(height: 40),
@@ -308,7 +328,7 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon, {bool showRefresh = false}) {
+  Widget _buildSectionHeader(String title, IconData icon, {bool showRefresh = false, VoidCallback? onRefresh}) {
     return Row(
       children: [
         Container(
@@ -331,7 +351,7 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
         if (showRefresh) ...[
           const Spacer(),
           GestureDetector(
-            onTap: _loadAllData,
+            onTap: onRefresh ?? _loadAllData,
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -346,76 +366,28 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
     );
   }
 
-  Widget _buildQuickActionsGrid() {
-    final actions = [
-      {'title': 'Exportar', 'icon': Icons.download_rounded, 'color': Colors.indigo},
-      {'title': 'Usuario+', 'icon': Icons.person_add_rounded, 'color': Colors.teal},
-      {'title': 'Config', 'icon': Icons.settings_suggest_rounded, 'color': Colors.blueGrey},
-      {'title': 'Soporte', 'icon': Icons.support_agent_rounded, 'color': Colors.purple},
-    ];
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 2.2,
-      ),
-      itemCount: actions.length,
-      itemBuilder: (context, index) {
-        final action = actions[index];
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: (action['color'] as Color).withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: index == 0 ? _handleExport : () {},
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: (action['color'] as Color).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(action['icon'] as IconData, color: action['color'] as Color, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      action['title'] as String,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildActivityTimeline() {
-    final activities = [
-      {'title': 'Parámetros de búsqueda actualizados', 'time': 'Hace 2h', 'user': 'Admin', 'icon': Icons.tune_rounded},
-      {'title': 'Backup automático completado', 'time': 'Hace 5h', 'user': 'System', 'icon': Icons.cloud_done},
-      {'title': 'Nueva actualización de seguridad', 'time': 'Ayer', 'user': 'Security', 'icon': Icons.verified_user},
-    ];
+    final auditLogs = (_securityStats?['audit_log'] as List?) ?? [];
+    
+    if (_isLoading || _isLoadingActivity) {
+      return const Padding(
+        padding: EdgeInsets.all(20.0),
+        child: Center(child: Text("Cargando actividad...", style: TextStyle(color: Colors.grey))),
+      );
+    }
+    
+    if (auditLogs.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: const Center(
+          child: Text("No hay actividad reciente", style: TextStyle(color: Colors.grey)),
+        ),
+      );
+    }
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -426,29 +398,46 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
       child: ListView.separated(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        itemCount: activities.length,
+        itemCount: auditLogs.length,
         separatorBuilder: (context, index) => Padding(
           padding: const EdgeInsets.only(left: 36.0),
           child: Divider(height: 24, color: Colors.grey[100]),
         ),
         itemBuilder: (context, index) {
-          final act = activities[index];
+          final act = auditLogs[index];
+          IconData icon;
+          Color iconColor;
+          
+          if (act['type'] == 'danger') {
+            icon = Icons.gpp_bad_rounded;
+            iconColor = Colors.redAccent;
+          } else if (act['type'] == 'warning') {
+            icon = Icons.warning_amber_rounded;
+            iconColor = Colors.orange;
+          } else if (act['type'] == 'success') {
+            icon = Icons.check_circle_outline;
+            iconColor = Colors.green;
+          } else {
+            icon = Icons.info_outline;
+            iconColor = Colors.blue;
+          }
+
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(act['icon'] as IconData, size: 20, color: Colors.grey[400]),
+              Icon(icon, size: 20, color: iconColor),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      act['title'] as String,
+                      act['action'] ?? 'Acción',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${act['user']} • ${act['time']}',
+                      '${act['detail'] ?? ''} • ${act['time'] ?? 'Reciente'}',
                       style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                     ),
                   ],

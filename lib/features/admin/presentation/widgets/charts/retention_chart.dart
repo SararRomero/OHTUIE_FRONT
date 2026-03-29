@@ -161,8 +161,10 @@ class _RetentionChartState extends State<RetentionChart> with SingleTickerProvid
           ),
         ),
         const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
           children: [
             _buildLegendIndicator(const Color(0xFFCCDDFF), 'Activas', active, 0),
             _buildLegendIndicator(const Color(0xFFEBD8F5), 'Bloqueadas', blocked, 1),

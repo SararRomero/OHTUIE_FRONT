@@ -218,6 +218,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         backgroundColor: const Color(0xFFFFCCE5),
                         loadingColor: const Color(0xFFFF4081),
                         borderRadius: 30,
+                        showBorderAnimation: true,
+                        useBorealisAnimation: true,
                       ),
                       const SizedBox(height: 20),
                       
