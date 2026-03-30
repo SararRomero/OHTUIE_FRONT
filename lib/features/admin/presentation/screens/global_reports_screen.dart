@@ -12,6 +12,7 @@ class GlobalReportsScreen extends StatefulWidget {
 
 class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
   bool _isLoading = true;
+  bool _isLoadingSummary = false;
   bool _isLoadingActivity = false;
   bool _isLoadingSecurity = false;
   bool _isLoadingHealth = false;
@@ -44,6 +45,22 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
         if (results[2]['success']) _securityStats = results[2]['data'];
         if (results[3]['success']) _systemHealth = results[3]['data'];
         _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadSummary() async {
+    setState(() => _isLoadingSummary = true);
+    final results = await Future.wait([
+      AdminService.getStatistics(),
+      AdminService.getUserCounts(),
+    ]);
+
+    if (mounted) {
+      setState(() {
+        if (results[0]['success']) _stats = results[0]['data'];
+        if (results[1]['success']) _userCounts = results[1]['data'];
+        _isLoadingSummary = false;
       });
     }
   }
@@ -170,13 +187,29 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Resumen General',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Resumen General',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: _loadSummary,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.refresh_rounded, size: 16, color: Colors.black54),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               // KPI Row
@@ -188,7 +221,7 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
                   children: [
                     KPICard(
                       title: 'Usuarias Totales',
-                      value: _isLoading ? '...' : '${_userCounts?['all'] ?? 0}',
+                      value: (_isLoading || _isLoadingSummary) ? '...' : '${_userCounts?['all'] ?? 0}',
                       subtitle: '+12% este mes',
                       icon: Icons.people_outline,
                       color: Colors.blue,
@@ -197,7 +230,7 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
                     const SizedBox(width: 16),
                     KPICard(
                       title: 'Activas Hoy',
-                      value: _isLoading ? '...' : '${_userCounts?['active'] ?? 0}',
+                      value: (_isLoading || _isLoadingSummary) ? '...' : '${_stats?['logged_in_today'] ?? 0}',
                       subtitle: '85% del total',
                       icon: Icons.bolt,
                       color: Colors.orange,
@@ -206,7 +239,7 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
                     const SizedBox(width: 16),
                     KPICard(
                       title: 'Alertas Seg.',
-                      value: _isLoading ? '...' : '${_stats?['failed_logins_24h'] ?? 0}',
+                      value: (_isLoading || _isLoadingSummary) ? '...' : '${_stats?['failed_logins_24h'] ?? 0}',
                       subtitle: 'Últimas 24h',
                       icon: Icons.security_outlined,
                       color: Colors.redAccent,
@@ -251,8 +284,6 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
                             color: Colors.black87,
                           ),
                         ),
-                        Spacer(),
-                        Icon(Icons.chevron_right, color: Colors.grey, size: 16),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -293,7 +324,7 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   Text(
-                                    '${login['ip_address'] ?? 'IP N/A'} • ${login['timestamp'] ?? 'Reciente'}',
+                                    login['timestamp'] ?? 'Reciente',
                                     style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                                   ),
                                 ],

@@ -69,7 +69,7 @@ class UsersTabView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           ChartCard(
-            title: 'Uso del Calendario (7 días)',
+            title: 'Uso de la App (semana)',
             chart: CalendarUsageChart(usageData: stats?['calendar_usage_last_7_days']),
             actionIcon: Icons.calendar_month_rounded,
             actionColor: Colors.purple[300]!,

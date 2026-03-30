@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/admin_service.dart';
 import '../widgets/shared/kpi_card.dart';
-import 'package:fl_chart/fl_chart.dart';
+import '../widgets/charts/risk_distribution_chart.dart';
 
 class SecurityStatsScreen extends StatefulWidget {
   const SecurityStatsScreen({super.key});
@@ -12,6 +12,7 @@ class SecurityStatsScreen extends StatefulWidget {
 
 class _SecurityStatsScreenState extends State<SecurityStatsScreen> {
   bool _isLoading = true;
+  bool _isLoadingSummary = false;
   bool _isLoadingDist = false;
   bool _isLoadingAudit = false;
   Map<String, dynamic>? _securityData;
@@ -33,6 +34,19 @@ class _SecurityStatsScreenState extends State<SecurityStatsScreen> {
           _securityData = result['data'];
         }
         _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadSummary() async {
+    setState(() => _isLoadingSummary = true);
+    final result = await AdminService.getSecurityStats();
+    if (mounted) {
+      setState(() {
+        if (result['success']) {
+          _securityData = result['data'];
+        }
+        _isLoadingSummary = false;
       });
     }
   }
@@ -110,7 +124,7 @@ class _SecurityStatsScreenState extends State<SecurityStatsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSectionHeader('Resumen de Amenazas', Icons.security_rounded, showRefresh: true),
+              _buildSectionHeader('Resumen de Amenazas', Icons.security_rounded, showRefresh: true, onRefresh: _loadSummary),
               const SizedBox(height: 16),
               // Security KPIs
               SizedBox(
@@ -121,7 +135,7 @@ class _SecurityStatsScreenState extends State<SecurityStatsScreen> {
                   children: [
                     KPICard(
                       title: 'Intentos Fallidos',
-                      value: _isLoading ? '...' : '${_securityData?['failed_logins_count'] ?? 0}',
+                      value: (_isLoading || _isLoadingSummary) ? '...' : '${_securityData?['failed_logins_count'] ?? 0}',
                       subtitle: 'Últimas 24 horas',
                       icon: Icons.warning_amber_rounded,
                       color: Colors.redAccent,
@@ -130,7 +144,7 @@ class _SecurityStatsScreenState extends State<SecurityStatsScreen> {
                     const SizedBox(width: 16),
                     KPICard(
                       title: 'Bloqueos Activos',
-                      value: _isLoading ? '...' : '${_securityData?['active_lockouts'] ?? 0}',
+                      value: (_isLoading || _isLoadingSummary) ? '...' : '${_securityData?['active_lockouts'] ?? 0}',
                       subtitle: 'Cuentas restringidas',
                       icon: Icons.lock_person_rounded,
                       color: Colors.orange,
@@ -139,7 +153,7 @@ class _SecurityStatsScreenState extends State<SecurityStatsScreen> {
                     const SizedBox(width: 16),
                     KPICard(
                       title: 'Sesiones Admin',
-                      value: _isLoading ? '...' : '${_securityData?['admin_sessions'] ?? 0}',
+                      value: (_isLoading || _isLoadingSummary) ? '...' : '${_securityData?['admin_sessions'] ?? 0}',
                       subtitle: 'Actualmente online',
                       icon: Icons.admin_panel_settings_rounded,
                       color: Colors.blue,
@@ -206,15 +220,9 @@ class _SecurityStatsScreenState extends State<SecurityStatsScreen> {
   }
 
   Widget _buildThreatChart() {
-    final riskDist = _securityData?['risk_distribution'] as Map<String, dynamic>?;
-    final passVal = (riskDist?['Pass'] ?? 0).toDouble();
-    final userVal = (riskDist?['User'] ?? 0).toDouble();
-    final tokenVal = (riskDist?['Token'] ?? 0).toDouble();
-    final total = passVal + userVal + tokenVal;
-
     return Container(
       height: 240,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -228,75 +236,9 @@ class _SecurityStatsScreenState extends State<SecurityStatsScreen> {
       ),
       child: (_isLoading || _isLoadingDist)
           ? const Center(child: CircularProgressIndicator())
-          : Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: PieChart(
-                    PieChartData(
-                      sectionsSpace: 4,
-                      centerSpaceRadius: 40,
-                      sections: [
-                        PieChartSectionData(
-                          color: Colors.redAccent,
-                          value: total > 0 ? passVal : 1,
-                          title: 'Pass',
-                          radius: 30,
-                          titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                        PieChartSectionData(
-                          color: Colors.orange,
-                          value: total > 0 ? userVal : 0,
-                          title: 'User',
-                          radius: 30,
-                          titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                        PieChartSectionData(
-                          color: Colors.blue,
-                          value: total > 0 ? tokenVal : 0,
-                          title: 'Token',
-                          radius: 30,
-                          titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildChartLegendItem('Contraseña errónea', Colors.redAccent),
-                      const SizedBox(height: 8),
-                      _buildChartLegendItem('Usuario inexistente', Colors.orange),
-                      const SizedBox(height: 8),
-                      _buildChartLegendItem('Token expirado', Colors.blue),
-                    ],
-                  ),
-                ),
-              ],
+          : RiskDistributionChart(
+              riskData: _securityData?['risk_distribution'] as Map<String, dynamic>?,
             ),
-    );
-  }
-
-  Widget _buildChartLegendItem(String label, Color color) {
-    return Row(
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.black54),
-          ),
-        ),
-      ],
     );
   }
 

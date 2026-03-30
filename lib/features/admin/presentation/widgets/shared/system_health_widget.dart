@@ -105,15 +105,6 @@ class _SystemHealthWidgetState extends State<SystemHealthWidget> with SingleTick
             children: [
               Expanded(
                 child: _buildHealthMetric(
-                  'Disponibilidad',
-                  '${widget.uptime.toStringAsFixed(1)}%',
-                  Icons.signal_cellular_alt,
-                  Colors.blue,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildHealthMetric(
                   'Tiempo Respuesta',
                   '${widget.responseTime}ms',
                   Icons.bolt,
