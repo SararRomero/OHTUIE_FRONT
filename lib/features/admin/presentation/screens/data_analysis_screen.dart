@@ -11,30 +11,62 @@ class DataAnalysisScreen extends StatefulWidget {
 }
 
 class _DataAnalysisScreenState extends State<DataAnalysisScreen> {
-  bool _isLoading = true;
-  Map<String, dynamic>? _analysisData;
+  bool _isLoadingPulse = true;
+  bool _isLoadingEngagement = true;
+  bool _isLoadingFunnel = true;
+  bool _isLoadingSentiment = true;
+  
+  Map<String, dynamic>? _pulseData;
+  Map<String, dynamic>? _engagementData;
+  List<dynamic>? _funnelData;
+  Map<String, dynamic>? _sentimentData;
 
   @override
   void initState() {
     super.initState();
-    _loadAnalysisData();
+    _loadAllData();
   }
 
-  Future<void> _loadAnalysisData() async {
-    setState(() => _isLoading = true);
-    
-    // Simulate complex data fetching
-    final result = await AdminService.getStatistics();
-    
-    if (mounted) {
-      setState(() {
-        if (result['success']) {
-          _analysisData = result['data'];
-        }
-        _isLoading = false;
-      });
+  Future<void> _loadAllData() async {
+    setState(() {
+      _isLoadingPulse = true;
+      _isLoadingEngagement = true;
+      _isLoadingFunnel = true;
+      _isLoadingSentiment = true;
+    });
+
+    try {
+      final result = await AdminService.getDataAnalysis();
+      if (mounted) {
+        setState(() {
+          if (result['success']) {
+            _pulseData = result['data']['user_pulse'];
+            _engagementData = result['data']['engagement'];
+            _funnelData = result['data']['funnel'];
+            _sentimentData = result['data']['sentiment'];
+          }
+          _isLoadingPulse = false;
+          _isLoadingEngagement = false;
+          _isLoadingFunnel = false;
+          _isLoadingSentiment = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingPulse = false;
+          _isLoadingEngagement = false;
+          _isLoadingFunnel = false;
+          _isLoadingSentiment = false;
+        });
+      }
     }
   }
+
+  Future<void> _loadPulse() => _loadAllData();
+  Future<void> _loadEngagement() => _loadAllData();
+  Future<void> _loadFunnel() => _loadAllData();
+  Future<void> _loadSentiment() => _loadAllData();
 
   @override
   Widget build(BuildContext context) {
@@ -68,70 +100,71 @@ class _DataAnalysisScreenState extends State<DataAnalysisScreen> {
             ),
           ),
         ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(2),
+          child: (_isLoadingPulse || _isLoadingEngagement || _isLoadingFunnel || _isLoadingSentiment)
+            ? const LinearProgressIndicator(color: Colors.indigo, backgroundColor: Colors.transparent, minHeight: 2)
+            : Container(height: 2, color: Colors.transparent),
+        ),
       ),
       body: RefreshIndicator(
-        onRefresh: _loadAnalysisData,
+        onRefresh: _loadAllData,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          padding: const EdgeInsets.fromLTRB(20, 15, 20, 30),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSectionHeader('Pulso de Usuario', Icons.analytics_rounded, showRefresh: true),
-              const SizedBox(height: 16),
+              _buildSectionHeader('Pulso de Usuario', Icons.analytics_rounded, showRefresh: true, onRefresh: _loadPulse),
+              const SizedBox(height: 20),
               // Analysis KPIs
-              SizedBox(
-                height: 165,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  children: [
-                    KPICard(
-                      title: 'Retención W1',
-                      value: _isLoading ? '...' : '68%',
-                      subtitle: '+5% vs mes anterior',
-                      icon: Icons.loop_rounded,
-                      color: Colors.teal,
-                      delay: 0,
-                    ),
-                    const SizedBox(width: 16),
-                    KPICard(
-                      title: 'Tiempo Medio',
-                      value: _isLoading ? '...' : '12m',
-                      subtitle: 'Por sesión diaria',
-                      icon: Icons.timer_outlined,
-                      color: Colors.indigo,
-                      delay: 100,
-                    ),
-                    const SizedBox(width: 16),
-                    KPICard(
-                      title: 'Satisfacción',
-                      value: _isLoading ? '...' : '4.8',
-                      subtitle: 'CSAT Score (1-5)',
-                      icon: Icons.star_rounded,
-                      color: Colors.amber,
-                      delay: 200,
-                    ),
-                  ],
-                ),
-              ),
+              const SizedBox(height: 20),
+              // Analysis KPIs - Two cards sharing full width
+              _isLoadingPulse 
+                ? const Center(child: CircularProgressIndicator())
+                : Row(
+                    children: [
+                      Expanded(
+                        child: KPICard(
+                          title: 'Retención Semana 1',
+                          value: _pulseData?['retention'] ?? '0%',
+                          subtitle: '+5% vs mes anterior',
+                          icon: Icons.loop_rounded,
+                          color: Colors.teal,
+                          delay: 0,
+                          width: double.infinity,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: KPICard(
+                          title: 'Tiempo Medio',
+                          value: _pulseData?['avg_time'] ?? '0m',
+                          subtitle: 'Por sesión diaria',
+                          icon: Icons.timer_outlined,
+                          color: Colors.indigo,
+                          delay: 100,
+                          width: double.infinity,
+                        ),
+                      ),
+                    ],
+                  ),
               const SizedBox(height: 32),
               
-              _buildSectionHeader('Participación por Funciones', Icons.pie_chart_rounded, showRefresh: true),
+              _buildSectionHeader('Participación por Funciones', Icons.pie_chart_rounded, showRefresh: true, onRefresh: _loadEngagement),
               const SizedBox(height: 16),
               _buildEngagementChart(),
               
               const SizedBox(height: 32),
-              _buildSectionHeader('Embudo de Conversión', Icons.filter_list_rounded, showRefresh: true),
+              _buildSectionHeader('Embudo de Conversión', Icons.filter_list_rounded, showRefresh: true, onRefresh: _loadFunnel),
               const SizedBox(height: 16),
               _buildConversionFunnel(),
-
-              const SizedBox(height: 32),
-              _buildSectionHeader('Perspectivas de Sentimiento', Icons.mood_rounded, showRefresh: true),
-              const SizedBox(height: 16),
+              const SizedBox(height: 40),
+              _buildSectionHeader('Perspectivas de Sentimiento', Icons.mood_rounded, showRefresh: true, onRefresh: _loadSentiment),
+              const SizedBox(height: 20),
               _buildSentimentAnalysis(),
               
-              const SizedBox(height: 40),
+              const SizedBox(height: 60),
             ],
           ),
         ),
@@ -139,7 +172,7 @@ class _DataAnalysisScreenState extends State<DataAnalysisScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon, {bool showRefresh = false}) {
+  Widget _buildSectionHeader(String title, IconData icon, {bool showRefresh = false, VoidCallback? onRefresh}) {
     return Row(
       children: [
         Container(
@@ -154,15 +187,16 @@ class _DataAnalysisScreenState extends State<DataAnalysisScreen> {
         Text(
           title,
           style: const TextStyle(
-            fontSize: 18,
+            fontSize: 16,
             fontWeight: FontWeight.bold,
             color: Colors.black87,
+            letterSpacing: 0.5,
           ),
         ),
         if (showRefresh) ...[
           const Spacer(),
           GestureDetector(
-            onTap: _loadAnalysisData,
+            onTap: onRefresh ?? _loadAllData,
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -192,7 +226,7 @@ class _DataAnalysisScreenState extends State<DataAnalysisScreen> {
           ),
         ],
       ),
-      child: _isLoading
+      child: _isLoadingEngagement
           ? const Center(child: CircularProgressIndicator())
           : Row(
               children: [
@@ -203,10 +237,9 @@ class _DataAnalysisScreenState extends State<DataAnalysisScreen> {
                       sectionsSpace: 4,
                       centerSpaceRadius: 45,
                       sections: [
-                        PieChartSectionData(color: Colors.pinkAccent, value: 40, radius: 25, title: ''),
-                        PieChartSectionData(color: Colors.amber, value: 25, radius: 25, title: ''),
-                        PieChartSectionData(color: Colors.cyan, value: 20, radius: 25, title: ''),
-                        PieChartSectionData(color: Colors.purpleAccent, value: 15, radius: 25, title: ''),
+                        PieChartSectionData(color: Colors.pinkAccent, value: (_engagementData?['Calendario']?['percent'] ?? 40).toDouble(), radius: 25, title: ''),
+                        PieChartSectionData(color: Colors.amber, value: (_engagementData?['Síntomas']?['percent'] ?? 30).toDouble(), radius: 25, title: ''),
+                        PieChartSectionData(color: Colors.cyan, value: (_engagementData?['Predicciones']?['percent'] ?? 30).toDouble(), radius: 25, title: ''),
                       ],
                     ),
                   ),
@@ -217,13 +250,11 @@ class _DataAnalysisScreenState extends State<DataAnalysisScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildLegendItem('Calendario', Colors.pinkAccent),
+                      _buildLegendItem('Calendario', Colors.pinkAccent, '${_engagementData?['Calendario']?['percent'] ?? 0}%'),
                       const SizedBox(height: 10),
-                      _buildLegendItem('Síntomas', Colors.amber),
+                      _buildLegendItem('Síntomas', Colors.amber, '${_engagementData?['Síntomas']?['percent'] ?? 0}%'),
                       const SizedBox(height: 10),
-                      _buildLegendItem('Predicciones', Colors.cyan),
-                      const SizedBox(height: 10),
-                      _buildLegendItem('Comunidad', Colors.purpleAccent),
+                      _buildLegendItem('Predicciones', Colors.cyan, '${_engagementData?['Predicciones']?['percent'] ?? 0}%'),
                     ],
                   ),
                 ),
@@ -232,65 +263,102 @@ class _DataAnalysisScreenState extends State<DataAnalysisScreen> {
     );
   }
 
-  Widget _buildLegendItem(String label, Color color) {
+  Widget _buildLegendItem(String label, Color color, String percent) {
     return Row(
       children: [
         Container(width: 10, height: 10, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
         const SizedBox(width: 8),
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black54)),
+        Expanded(
+          child: Text(
+            "$label ($percent)", 
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black87),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildConversionFunnel() {
-    final stages = [
-      {'label': 'Registros', 'value': '100%', 'color': Colors.indigo[400]},
-      {'label': 'Perfil Completo', 'value': '85%', 'color': Colors.indigo[300]},
-      {'label': 'Primer Síntoma', 'value': '62%', 'color': Colors.indigo[200]},
-      {'label': 'Usuaria Activa', 'value': '48%', 'color': Colors.indigo[100]},
+    if (_isLoadingFunnel) {
+       return Container(
+         height: 150,
+         alignment: Alignment.center,
+         child: const CircularProgressIndicator(),
+       );
+    }
+
+    final stages = _funnelData ?? [
+      {'label': 'Registros', 'value': '100%', 'color': '0xFF5C6BC0'},
+      {'label': 'Perfil Completo', 'value': '0%', 'color': '0xFF7986CB'},
+      {'label': 'Primer Síntoma', 'value': '0%', 'color': '0xFF9FA8DA'},
+      {'label': 'Usuaria Activa', 'value': '0%', 'color': '0xFFC5CAE9'},
     ];
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
       ),
       child: Column(
         children: stages.map((stage) {
+          final colorCode = int.parse(stage['label'] == 'Registros' ? '0xFF5C6BC0' : stage['color'] as String);
+          final color = Color(colorCode);
+          final valueStr = stage['value'] as String;
+          final percent = (double.tryParse(valueStr.replaceAll('%', '')) ?? 0) / 100;
+          
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: Row(
+            padding: const EdgeInsets.only(bottom: 20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  width: 90,
-                  child: Text(stage['label'] as String, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      stage['label'] as String, 
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.indigo[900]),
+                    ),
+                    if (percent < 0.2)
+                      Text(valueStr, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+                  ],
                 ),
-                Expanded(
-                  child: Stack(
-                    children: [
-                      Container(
+                const SizedBox(height: 8),
+                Stack(
+                  alignment: Alignment.centerLeft,
+                  children: [
+                    Container(
+                      height: 24,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    FractionallySizedBox(
+                      widthFactor: percent.clamp(0.05, 1.0),
+                      child: Container(
                         height: 24,
                         decoration: BoxDecoration(
-                          color: Colors.grey[100],
+                          gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
                           borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(color: color.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2)),
+                          ],
                         ),
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 8),
+                        child: percent >= 0.15 
+                            ? Text(valueStr, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold))
+                            : const SizedBox.shrink(),
                       ),
-                      FractionallySizedBox(
-                        widthFactor: double.parse((stage['value'] as String).replaceAll('%', '')) / 100,
-                        child: Container(
-                          height: 24,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(colors: [stage['color'] as Color, (stage['color'] as Color).withOpacity(0.7)]),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 10),
-                          child: Text(stage['value'] as String, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -301,6 +369,17 @@ class _DataAnalysisScreenState extends State<DataAnalysisScreen> {
   }
 
   Widget _buildSentimentAnalysis() {
+    if (_isLoadingSentiment) {
+       return Container(
+         height: 100,
+         alignment: Alignment.center,
+         child: const CircularProgressIndicator(),
+       );
+    }
+
+    final metrics = _sentimentData?['metrics'] ?? {'Positive': 0, 'Neutral': 0, 'Critical': 0};
+    final tags = List<String>.from(_sentimentData?['tags'] ?? []);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -312,9 +391,9 @@ class _DataAnalysisScreenState extends State<DataAnalysisScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildSentimentMetric('Positivo', Icons.favorite_rounded, Colors.green, '72%'),
-              _buildSentimentMetric('Neutral', Icons.sentiment_neutral_rounded, Colors.grey, '20%'),
-              _buildSentimentMetric('Crítico', Icons.error_outline_rounded, Colors.redAccent, '8%'),
+              _buildSentimentMetric('Positivo', Icons.favorite_rounded, Colors.green, '${metrics['Positive']}%'),
+              _buildSentimentMetric('Neutral', Icons.sentiment_neutral_rounded, Colors.grey, '${metrics['Neutral']}%'),
+              _buildSentimentMetric('Crítico', Icons.error_outline_rounded, Colors.redAccent, '${metrics['Critical']}%'),
             ],
           ),
           const SizedBox(height: 24),
@@ -326,13 +405,7 @@ class _DataAnalysisScreenState extends State<DataAnalysisScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: [
-              _buildTag('Precisión', Colors.green),
-              _buildTag('Diseño UI', Colors.blue),
-              _buildTag('Carga rápida', Colors.teal),
-              _buildTag('Notificaciones', Colors.orange),
-              _buildTag('Privacidad', Colors.indigo),
-            ],
+            children: tags.map((t) => _buildTag(t, Colors.indigo)).toList(),
           ),
         ],
       ),

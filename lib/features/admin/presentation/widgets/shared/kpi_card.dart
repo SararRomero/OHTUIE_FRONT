@@ -7,6 +7,7 @@ class KPICard extends StatefulWidget {
   final IconData icon;
   final Color color;
   final int delay;
+  final double? width;
 
   const KPICard({
     super.key,
@@ -16,6 +17,7 @@ class KPICard extends StatefulWidget {
     required this.icon,
     required this.color,
     this.delay = 0,
+    this.width = 150,
   });
 
   @override
@@ -75,7 +77,7 @@ class _KPICardState extends State<KPICard> with SingleTickerProviderStateMixin {
               child: ScaleTransition(
                 scale: _scaleAnimation,
                 child: Container(
-                  width: 150,
+                  width: widget.width,
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(

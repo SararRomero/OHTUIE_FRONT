@@ -61,6 +61,33 @@ class AdminService {
     }
   }
 
+  static Future<Map<String, dynamic>> getDataAnalysis() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      
+      final response = await ApiClient.get("/admin/data-analysis", token: token);
+      
+      if (response.statusCode == 200) {
+        return {
+          "success": true,
+          "data": jsonDecode(response.body)
+        };
+      } else {
+        final error = jsonDecode(response.body);
+        return {
+          "success": false,
+          "message": error['detail'] ?? "Error fetching data analysis"
+        };
+      }
+    } catch (e) {
+      return {
+        "success": false,
+        "message": "Connection error: $e"
+      };
+    }
+  }
+
   static Future<Map<String, dynamic>> getStatistics({
     String? fStart, String? fEnd,
     String? rStart, String? rEnd,

@@ -20,6 +20,7 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
   Map<String, dynamic>? _userCounts;
   Map<String, dynamic>? _securityStats;
   Map<String, dynamic>? _systemHealth;
+  bool _isActivityExpanded = false;
 
   @override
   void initState() {
@@ -222,7 +223,9 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
                     KPICard(
                       title: 'Usuarias Totales',
                       value: (_isLoading || _isLoadingSummary) ? '...' : '${_userCounts?['all'] ?? 0}',
-                      subtitle: '+12% este mes',
+                      subtitle: (_isLoading || _isLoadingSummary) 
+                          ? 'Cargando...' 
+                          : '+${_stats?['new_users_month_percentage'] ?? 0}% este mes',
                       icon: Icons.people_outline,
                       color: Colors.blue,
                       delay: 0,
@@ -231,7 +234,9 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
                     KPICard(
                       title: 'Activas Hoy',
                       value: (_isLoading || _isLoadingSummary) ? '...' : '${_stats?['logged_in_today'] ?? 0}',
-                      subtitle: '85% del total',
+                      subtitle: (_isLoading || _isLoadingSummary) 
+                          ? 'Cargando...' 
+                          : '${_stats?['activity_today_percentage'] ?? 0}% del total',
                       icon: Icons.bolt,
                       color: Colors.orange,
                       delay: 100,
@@ -398,7 +403,8 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
   }
 
   Widget _buildActivityTimeline() {
-    final auditLogs = (_securityStats?['audit_log'] as List?) ?? [];
+    final allLogs = (_securityStats?['audit_log'] as List?) ?? [];
+    final auditLogs = _isActivityExpanded ? allLogs : allLogs.take(5).toList();
     
     if (_isLoading || _isLoadingActivity) {
       return const Padding(
@@ -407,7 +413,7 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
       );
     }
     
-    if (auditLogs.isEmpty) {
+    if (allLogs.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -420,64 +426,97 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: ListView.separated(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: auditLogs.length,
-        separatorBuilder: (context, index) => Padding(
-          padding: const EdgeInsets.only(left: 36.0),
-          child: Divider(height: 24, color: Colors.grey[100]),
-        ),
-        itemBuilder: (context, index) {
-          final act = auditLogs[index];
-          IconData icon;
-          Color iconColor;
-          
-          if (act['type'] == 'danger') {
-            icon = Icons.gpp_bad_rounded;
-            iconColor = Colors.redAccent;
-          } else if (act['type'] == 'warning') {
-            icon = Icons.warning_amber_rounded;
-            iconColor = Colors.orange;
-          } else if (act['type'] == 'success') {
-            icon = Icons.check_circle_outline;
-            iconColor = Colors.green;
-          } else {
-            icon = Icons.info_outline;
-            iconColor = Colors.blue;
-          }
-
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, size: 20, color: iconColor),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      act['action'] ?? 'Acción',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${act['detail'] ?? ''} • ${act['time'] ?? 'Reciente'}',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                    ),
-                  ],
-                ),
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
-          );
-        },
-      ),
+          ),
+          child: ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: auditLogs.length,
+            separatorBuilder: (context, index) => Padding(
+              padding: const EdgeInsets.only(left: 36.0),
+              child: Divider(height: 24, color: Colors.grey[100]),
+            ),
+            itemBuilder: (context, index) {
+              final act = auditLogs[index];
+              IconData icon;
+              Color iconColor;
+              
+              if (act['type'] == 'danger') {
+                icon = Icons.gpp_bad_rounded;
+                iconColor = Colors.redAccent;
+              } else if (act['type'] == 'warning') {
+                icon = Icons.warning_amber_rounded;
+                iconColor = Colors.orange;
+              } else if (act['type'] == 'success') {
+                icon = Icons.check_circle_outline;
+                iconColor = Colors.green;
+              } else {
+                icon = Icons.info_outline;
+                iconColor = Colors.blue;
+              }
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(icon, size: 20, color: iconColor),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          act['action'] ?? 'Acción',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${act['detail'] ?? ''} • ${act['time'] ?? 'Reciente'}',
+                          style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+        if (allLogs.length > 5) ...[
+          const SizedBox(height: 12),
+          Center(
+            child: TextButton.icon(
+              onPressed: () => setState(() => _isActivityExpanded = !_isActivityExpanded),
+              icon: Icon(
+                _isActivityExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                size: 18,
+                color: Colors.blue,
+              ),
+              label: Text(
+                _isActivityExpanded ? "Ver menos" : "Ver todo (${allLogs.length})",
+                style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                backgroundColor: Colors.blue.withOpacity(0.05),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

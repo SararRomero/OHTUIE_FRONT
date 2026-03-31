@@ -182,7 +182,7 @@ class _RiskDistributionChartState extends State<RiskDistributionChart> with Sing
           spacing: 8,
           runSpacing: 8,
           children: [
-            _buildLegendIndicator(hasData ? Colors.redAccent : Colors.grey[300]!, 'Contraseña errónea', pass, 0, hasData),
+            _buildLegendIndicator(hasData ? Colors.redAccent : Colors.grey[300]!, 'Credenciales fallidas', pass, 0, hasData),
             _buildLegendIndicator(hasData ? Colors.orange : Colors.grey[300]!, 'Usuario inexistente', user, 1, hasData),
             _buildLegendIndicator(hasData ? Colors.blue : Colors.grey[300]!, 'Token expirado', token, 2, hasData),
           ],

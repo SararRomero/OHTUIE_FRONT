@@ -6,6 +6,7 @@ import 'auth_service.dart';
 import '../admin/presentation/screens/admin_dashboard_screen.dart';
 import '../home/user_home_screen.dart';
 import '../../core/widgets/cycle_loading_button.dart';
+import '../../core/widgets/custom_notification.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,18 +26,14 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, ingresa email y contraseña')),
-      );
+      CustomNotification.show(context, message: 'Por favor, ingresa email y contraseña', type: NotificationType.warning);
       return;
     }
 
     // Email format validation
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegex.hasMatch(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, ingresa un formato de email válido')),
-      );
+      CustomNotification.show(context, message: 'Formato de email inválido', type: NotificationType.warning);
       return;
     }
 
@@ -62,14 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (result['message'] == 'Inactive user') {
           _showBlockedDialog();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message']),
-              backgroundColor: Colors.redAccent,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          );
+          CustomNotification.show(context, message: 'Email o contraseña incorrectos', type: NotificationType.error);
         }
       }
     }
@@ -189,12 +179,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                    bottomLeft: Radius.circular(30),
-                    bottomRight: Radius.circular(30),
-                  ),
+                  borderRadius: BorderRadius.all(Radius.circular(30)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 20,
+                      offset: Offset(0, 5),
+                    )
+                  ]
                 ),
                 margin: const EdgeInsets.all(20),
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
@@ -224,7 +216,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _emailController,
-                        maxLength: 50, // Let's allow more for email but still limited
+                        maxLength: 50,
                         decoration: InputDecoration(
                           hintText: 'tu@email.com',
                           prefixIcon: const Icon(Icons.email_outlined),
@@ -260,7 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                           child: const Text(
                             'No te acuerdas de tu contraseña?',
-                            style: TextStyle(color: Color(0xFF6A9EFF)), // Light blue link color
+                            style: TextStyle(color: Color(0xFF6A9EFF)),
                           ),
                         ),
                       ),
