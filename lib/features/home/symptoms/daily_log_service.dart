@@ -1,6 +1,8 @@
 import 'dart:convert';
 import '../../../core/network/api_client.dart';
 import '../../auth/auth_service.dart';
+import '../../../core/utils/error_handler.dart';
+
 
 class DailyLogService {
   static Future<Map<String, dynamic>> getDailyLog(DateTime date) async {
@@ -26,7 +28,7 @@ class DailyLogService {
     } catch (e) {
       return {
         'success': false,
-        'message': 'Error de conexión: $e',
+        'message': ErrorHandler.translate(e),
       };
     }
   }
@@ -48,7 +50,7 @@ class DailyLogService {
     } catch (e) {
       return {
         'success': false,
-        'message': 'Error de conexión: $e',
+        'message': ErrorHandler.translate(e),
       };
     }
   }
@@ -70,7 +72,7 @@ class DailyLogService {
     } catch (e) {
       return {
         'success': false,
-        'message': 'Error de conexión: $e',
+        'message': ErrorHandler.translate(e),
       };
     }
   }

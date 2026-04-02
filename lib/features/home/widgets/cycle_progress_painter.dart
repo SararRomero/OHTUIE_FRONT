@@ -45,13 +45,13 @@ class CycleProgressPainter extends CustomPainter {
 
     // Progress track
     if (progress > 0) {
-      final sweepAngle = 2 * math.pi * progress;
+      final sweepAngle = 2 * math.pi * progress.clamp(0.0, 1.0);
 
       // Petal Rainbow Palette
       const Color colorMenstruation = Color(0xFFEBD8F5); 
       const Color colorFollicular = Color(0xFFF5F0FF);    
       const Color colorFertileWindow = Color(0xFFD4E2FF); 
-      const Color colorOvulation = Color(0xFFFFE5E9);    
+      const Color colorOvulation = Color(0xFFFFADB9);    
       const Color colorLuteal = Color(0xFFFFE0CC);       
 
       // Calculate base stops for phase boundaries
@@ -167,7 +167,7 @@ class CycleProgressPainter extends CustomPainter {
     drawMarker(ovulationDay, const Color(0xFFFFE5E9), "ovulation"); // Pink
 
     // Handle
-    final angle = -math.pi / 2 + (2 * math.pi * progress);
+    final angle = -math.pi / 2 + (2 * math.pi * progress.clamp(0.0, 1.0));
     final handleOffset = Offset(
       center.dx + radius * math.cos(angle),
       center.dy + radius * math.sin(angle),

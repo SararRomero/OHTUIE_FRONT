@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class CalendarHeader extends StatelessWidget {
-  const CalendarHeader({super.key});
+  final dynamic popResult;
+  const CalendarHeader({super.key, this.popResult});
 
   @override
   Widget build(BuildContext context) {
@@ -9,7 +10,7 @@ class CalendarHeader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         IconButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context, popResult),
           icon: const Icon(Icons.chevron_left, color: Colors.black, size: 28),
           style: IconButton.styleFrom(
             backgroundColor: Colors.white,

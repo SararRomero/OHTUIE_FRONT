@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'cycle_history_service.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import '../../core/widgets/custom_notification.dart';
 
 class CycleHistoryScreen extends StatefulWidget {
   const CycleHistoryScreen({super.key});
@@ -130,12 +131,7 @@ class _CycleHistoryScreenState extends State<CycleHistoryScreen> {
         await _loadData();
       } else {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.redAccent,
-            content: Text('Error: ${resp['message']}'),
-          ),
-        );
+        CustomNotification.show(context, message: 'Error: ${resp['message']}', type: NotificationType.error);
       }
     }
   }

@@ -10,6 +10,7 @@ import '../../core/widgets/session_expired_modal.dart';
 import 'cycle_history_screen.dart';
 import '../emotions/emotions_screen.dart';
 import '../cycle_analysis/cycle_analysis_screen.dart';
+import '../../core/widgets/custom_notification.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Map<String, dynamic>? initialUserData;
@@ -23,6 +24,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = true;
   String _name = "";
   String _email = "";
+  String? _avatarId;
 
   @override
   void initState() {
@@ -30,6 +32,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (widget.initialUserData != null) {
       _name = widget.initialUserData!['full_name'] ?? "Usuario";
       _email = widget.initialUserData!['email'] ?? "";
+      _avatarId = widget.initialUserData!['avatar_id'];
       _isLoading = false;
     }
     _loadUserProfile();
@@ -47,9 +50,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _name = result['data']['full_name'] ?? "Usuario";
           _email = result['data']['email'] ?? "";
+          _avatarId = result['data']['avatar_id'];
           _isLoading = false;
         });
       } else {
+// ... (rest of the logic remains same)
         setState(() => _isLoading = false);
         
         // If it's a credential error, show the expired modal
@@ -65,9 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
              }
         } else if (_name.isEmpty) {
           // Only show generic error if we actually don't have data to show
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${result['message']}')),
-          );
+          CustomNotification.show(context, message: 'Error: ${result['message']}', type: NotificationType.error);
         }
       }
     }
@@ -278,7 +281,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           CircleAvatar(
             radius: 30,
             backgroundColor: const Color(0xFFFFB2C1).withOpacity(0.2),
-            child: const Icon(Icons.person, color: Color(0xFFFF4081), size: 30),
+            backgroundImage: _avatarId != null 
+                ? AssetImage('lib/assets/image/avatars/$_avatarId.png')
+                : null,
+            child: _avatarId == null 
+                ? const Icon(Icons.person, color: Color(0xFFFF4081), size: 30)
+                : null,
           ),
           const SizedBox(width: 16),
           Expanded(

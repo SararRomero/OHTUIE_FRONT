@@ -1,3 +1,4 @@
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import 'sign_up_screen.dart';
@@ -68,56 +69,85 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showBlockedDialog() {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        backgroundColor: Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFFFFB2C1), Color(0xFFFF85A1)]),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(color: const Color(0xFFFF85A1).withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6)),
-                  ]
-                ),
-                child: const Icon(Icons.block_flipped, color: Colors.white, size: 40),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                '¡Cuenta Bloqueada!',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Tu cuenta ha sido desactivada temporalmente por un administrador. Esto puede deberse a razones de seguridad o incumplimiento de nuestras normas.',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF85A1).withOpacity(0.1),
-                    foregroundColor: const Color(0xFFFF85A1),
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      barrierColor: Colors.transparent, // Background blur handled by modal
+      builder: (BuildContext ctx) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(20),
+                    blurRadius: 20,
+                    spreadRadius: 5,
                   ),
-                  child: const Text('Entendido', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                ),
+                ],
               ),
-            ],
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60, decoration: const BoxDecoration(
+                      color: Color(0xFFFF9EAF),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.block_flipped, color: Colors.white, size: 30),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    '¡Cuenta Bloqueada!',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Tu cuenta ha sido desactivada temporalmente por un administrador. Esto puede deberse a razones de seguridad o incumplimiento de nuestras normas.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: const Color(0xFFFFE5E9),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: const Text(
+                        'Entendido',
+                        style: TextStyle(
+                          color: Color(0xFFFF4081),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -265,8 +295,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         isLoading: _isLoading,
                         onPressed: _handleLogin,
                         backgroundColor: const Color(0xFFFFCCE5),
-                        loadingColor: const Color(0xFFFF4081),
                         borderRadius: 30,
+                        showBorderAnimation: true,
+                        useBorealisAnimation: false,
                       ),
                       const SizedBox(height: 20),
 

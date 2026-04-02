@@ -1,6 +1,8 @@
 import 'dart:convert';
 import '../auth/auth_service.dart';
 import '../../core/network/api_client.dart';
+import '../../core/utils/error_handler.dart';
+
 
 class UserService {
   static Future<Map<String, dynamic>> getUserMe() async {
@@ -17,7 +19,7 @@ class UserService {
         return {"success": false, "message": error['detail'] ?? "Failed to fetch profile"};
       }
     } catch (e) {
-      return {"success": false, "message": "Connection error: $e"};
+      return {"success": false, "message": ErrorHandler.translate(e)};
     }
   }
 
@@ -28,6 +30,7 @@ class UserService {
     int? cycleDuration,
     int? periodDuration,
     String? lastPeriodDate,
+    String? avatarId,
   }) async {
     try {
       final token = await AuthService.getToken();
@@ -40,6 +43,7 @@ class UserService {
       if (cycleDuration != null) body["cycle_duration"] = cycleDuration;
       if (periodDuration != null) body["period_duration"] = periodDuration;
       if (lastPeriodDate != null) body["last_period_date"] = lastPeriodDate;
+      if (avatarId != null) body["avatar_id"] = avatarId;
 
       final response = await ApiClient.putDirect("/users/me", body, token: token);
       
@@ -50,7 +54,7 @@ class UserService {
         return {"success": false, "message": error['detail'] ?? "Failed to update profile"};
       }
     } catch (e) {
-      return {"success": false, "message": "Connection error: $e"};
+      return {"success": false, "message": ErrorHandler.translate(e)};
     }
   }
 
@@ -76,7 +80,7 @@ class UserService {
         return {"success": false, "message": error['detail'] ?? "Failed to update password"};
       }
     } catch (e) {
-      return {"success": false, "message": "Connection error: $e"};
+      return {"success": false, "message": ErrorHandler.translate(e)};
     }
   }
 

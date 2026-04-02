@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/network/api_client.dart';
+import '../../core/utils/error_handler.dart';
+
 
 class AuthService {
   static SharedPreferences? _prefs;
@@ -35,7 +37,7 @@ class AuthService {
         };
       }
     } catch (e) {
-      return {"success": false, "message": "Connection error: $e"};
+      return {"success": false, "message": ErrorHandler.translate(e)};
     }
   }
 
@@ -68,7 +70,7 @@ class AuthService {
         return {"success": false, "message": error['detail'] ?? "Signup failed"};
       }
     } catch (e) {
-      return {"success": false, "message": "Connection error: $e"};
+      return {"success": false, "message": ErrorHandler.translate(e)};
     }
   }
 
@@ -86,7 +88,7 @@ class AuthService {
         };
       }
     } catch (e) {
-      return {"success": false, "message": "Connection error: $e"};
+      return {"success": false, "message": ErrorHandler.translate(e)};
     }
   }
 

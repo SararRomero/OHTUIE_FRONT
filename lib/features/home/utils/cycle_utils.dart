@@ -14,7 +14,7 @@ class CycleUtils {
     const Color colorMenstruation = Color(0xFFEBD8F5); // Morado
     const Color colorFollicular = Color(0xFFF5F0FF);    // Lavanda pálido
     const Color colorFertileWindow = Color(0xFFD4E2FF); // Azul
-    const Color colorOvulation = Color(0xFFFFE5E9);    // Rosa
+    const Color colorOvulation = Color(0xFFFFADB9);    // Rosa (Más vibrante para mejor visibilidad)
     const Color colorLuteal = Color(0xFFFFE0CC);       // Naranja Pastel (Nuevo)
 
     String currentPhaseText = "";
@@ -24,7 +24,13 @@ class CycleUtils {
     Color nextStageColor = Colors.grey;
     bool isToday = false;
 
-    if (currentCycleDay <= periodDuration) {
+    if (currentCycleDay > avgCycle) {
+      currentPhaseText = "Retraso";
+      phaseColor = const Color(0xFFFFB2C1); // Coral suave para retraso
+      countdownLabel = "Días de retraso";
+      daysToNext = currentCycleDay - avgCycle;
+      nextStageColor = colorMenstruation;
+    } else if (currentCycleDay <= periodDuration) {
       currentPhaseText = "Menstruación";
       phaseColor = colorMenstruation;
       countdownLabel = "Ventana Fértil en";
@@ -60,8 +66,8 @@ class CycleUtils {
     return {
       'currentPhaseText': currentPhaseText,
       'phaseColor': phaseColor,
-      'countdownLabel': isToday ? "Ovulación" : countdownLabel,
-      'countdownText': isToday ? "Hoy" : "$daysToNext días",
+      'countdownLabel': (currentCycleDay > avgCycle) ? "Días de retraso" : (isToday ? "Ovulación" : countdownLabel),
+      'countdownText': (currentCycleDay > avgCycle) ? "$daysToNext" : (isToday ? "Hoy" : "$daysToNext días"),
       'nextStageColor': nextStageColor,
       'isToday': isToday,
       'currentCycleDay': currentCycleDay,

@@ -5,6 +5,8 @@ import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/utils/error_handler.dart';
+
 
 class AdminService {
   static Future<Map<String, dynamic>> getSecurityStats() async {
@@ -56,7 +58,7 @@ class AdminService {
     } catch (e) {
       return {
         "success": false,
-        "message": "Connection error: $e"
+        "message": ErrorHandler.translate(e)
       };
     }
   }
@@ -83,7 +85,7 @@ class AdminService {
     } catch (e) {
       return {
         "success": false,
-        "message": "Connection error: $e"
+        "message": ErrorHandler.translate(e)
       };
     }
   }
@@ -124,7 +126,7 @@ class AdminService {
     } catch (e) {
       return {
         "success": false,
-        "message": "Connection error: $e"
+        "message": ErrorHandler.translate(e)
       };
     }
   }
@@ -151,7 +153,7 @@ class AdminService {
     } catch (e) {
       return {
         "success": false,
-        "message": "Connection error: $e"
+        "message": ErrorHandler.translate(e)
       };
     }
   }
@@ -181,7 +183,7 @@ class AdminService {
     } catch (e) {
       return {
         "success": false,
-        "message": "Connection error: $e"
+        "message": ErrorHandler.translate(e)
       };
     }
   }
@@ -200,7 +202,7 @@ class AdminService {
         return {"success": false, "message": error['detail'] ?? "Error updating user"};
       }
     } catch (e) {
-      return {"success": false, "message": "Connection error: $e"};
+      return {"success": false, "message": ErrorHandler.translate(e)};
     }
   }
 
@@ -217,7 +219,7 @@ class AdminService {
         return {"success": false, "message": error['detail'] ?? "Error deleting user"};
       }
     } catch (e) {
-      return {"success": false, "message": "Connection error: $e"};
+      return {"success": false, "message": ErrorHandler.translate(e)};
     }
   }
 
@@ -237,7 +239,7 @@ class AdminService {
         return {"success": false, "message": error['detail'] ?? "Contraseña incorrecta"};
       }
     } catch (e) {
-      return {"success": false, "message": "Connection error: $e"};
+      return {"success": false, "message": ErrorHandler.translate(e)};
     }
   }
 
@@ -315,7 +317,7 @@ class AdminService {
         return {"success": false, "message": "Error al generar el archivo Excel"};
       }
     } catch (e) {
-      return {"success": false, "message": "Error durante la exportación: $e"};
+      return {"success": false, "message": "Error durante la exportación: ${ErrorHandler.translate(e)}"};
     }
   }
 

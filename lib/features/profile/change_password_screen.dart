@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'user_service.dart';
 import '../auth/forgot_password_screen.dart';
 import '../../core/widgets/cycle_loading_button.dart';
+import '../../core/widgets/custom_notification.dart';
 
 enum PasswordState { none, validating, correct, incorrect }
 
@@ -72,16 +73,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     final confirmPassword = _confirmPasswordController.text;
 
     if (currentPassword.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, completa todos los campos')),
-      );
+      CustomNotification.show(context, message: 'Por favor, completa todos los campos', type: NotificationType.warning);
       return;
     }
 
     if (newPassword != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Las contraseñas no coinciden')),
-      );
+      CustomNotification.show(context, message: 'Las contraseñas no coinciden', type: NotificationType.warning);
       return;
     }
 
@@ -95,9 +92,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     if (mounted) {
       setState(() => _isLoading = false);
       if (result['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Contraseña actualizada correctamente'), backgroundColor: Colors.green),
-        );
+        CustomNotification.show(context, message: 'Contraseña actualizada correctamente', type: NotificationType.success);
         Navigator.pop(context);
       } else {
         // Here's the requested behavior for incorrect current password
@@ -253,6 +248,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           onPressed: (_currentPasswordState != PasswordState.correct) ? null : _handleSave,
                           backgroundColor: const Color(0xFFFFB2C1),
                           borderRadius: 30,
+                          showBorderAnimation: true,
+                          useBorealisAnimation: false,
                         ),
                       ],
                     ),

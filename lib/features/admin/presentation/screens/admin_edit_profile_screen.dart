@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../profile/user_service.dart';
+import '../../../../core/widgets/custom_notification.dart';
+import '../../../../core/widgets/cycle_loading_button.dart';
 
 class AdminEditProfileScreen extends StatefulWidget {
   const AdminEditProfileScreen({super.key});
@@ -43,8 +45,10 @@ class _AdminEditProfileScreenState extends State<AdminEditProfileScreen> {
         });
       } else {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar datos: ${result['message']}')),
+        CustomNotification.show(
+          context, 
+          message: 'Error al cargar datos: ${result['message']}', 
+          type: NotificationType.error
         );
       }
     }
@@ -55,8 +59,10 @@ class _AdminEditProfileScreenState extends State<AdminEditProfileScreen> {
     final email = _emailController.text.trim();
 
     if (name.isEmpty || email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, completa todos los campos')),
+      CustomNotification.show(
+        context, 
+        message: 'Por favor, completa todos los campos', 
+        type: NotificationType.warning
       );
       return;
     }
@@ -67,13 +73,17 @@ class _AdminEditProfileScreenState extends State<AdminEditProfileScreen> {
     if (mounted) {
       setState(() => _isSaving = false);
       if (result['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Datos actualizados correctamente'), backgroundColor: Colors.green),
+        CustomNotification.show(
+          context, 
+          message: 'Datos actualizados correctamente', 
+          type: NotificationType.success
         );
         Navigator.pop(context);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${result['message']}'), backgroundColor: Colors.red),
+        CustomNotification.show(
+          context, 
+          message: 'Error: ${result['message']}', 
+          type: NotificationType.error
         );
       }
     }
@@ -181,29 +191,15 @@ class _AdminEditProfileScreenState extends State<AdminEditProfileScreen> {
                   const SizedBox(height: 40),
 
                   // Save Button
-                  SizedBox(
-                    width: double.infinity,
+                  CycleLoadingButton(
+                    text: 'Guardar',
+                    isLoading: _isSaving,
+                    onPressed: _handleSave,
+                    backgroundColor: const Color(0xFFFF4081),
+                    borderRadius: 30,
                     height: 60,
-                    child: ElevatedButton(
-                      onPressed: _isSaving ? null : _handleSave,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF4081), // More visible pink
-                        foregroundColor: Colors.white,
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      child: _isSaving 
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                            'Guardar',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                    ),
+                    showBorderAnimation: true,
+                    useBorealisAnimation: false,
                   ),
                   const SizedBox(height: 20),
                 ],

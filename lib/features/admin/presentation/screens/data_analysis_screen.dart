@@ -28,45 +28,59 @@ class _DataAnalysisScreenState extends State<DataAnalysisScreen> {
   }
 
   Future<void> _loadAllData() async {
-    setState(() {
-      _isLoadingPulse = true;
-      _isLoadingEngagement = true;
-      _isLoadingFunnel = true;
-      _isLoadingSentiment = true;
-    });
+    _loadPulse();
+    _loadEngagement();
+    _loadFunnel();
+    _loadSentiment();
+  }
 
+  Future<void> _loadPulse() async {
+    setState(() => _isLoadingPulse = true);
     try {
       final result = await AdminService.getDataAnalysis();
-      if (mounted) {
-        setState(() {
-          if (result['success']) {
-            _pulseData = result['data']['user_pulse'];
-            _engagementData = result['data']['engagement'];
-            _funnelData = result['data']['funnel'];
-            _sentimentData = result['data']['sentiment'];
-          }
-          _isLoadingPulse = false;
-          _isLoadingEngagement = false;
-          _isLoadingFunnel = false;
-          _isLoadingSentiment = false;
-        });
+      if (mounted && result['success']) {
+        setState(() => _pulseData = result['data']['user_pulse']);
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoadingPulse = false;
-          _isLoadingEngagement = false;
-          _isLoadingFunnel = false;
-          _isLoadingSentiment = false;
-        });
-      }
+    } finally {
+      if (mounted) setState(() => _isLoadingPulse = false);
     }
   }
 
-  Future<void> _loadPulse() => _loadAllData();
-  Future<void> _loadEngagement() => _loadAllData();
-  Future<void> _loadFunnel() => _loadAllData();
-  Future<void> _loadSentiment() => _loadAllData();
+  Future<void> _loadEngagement() async {
+    setState(() => _isLoadingEngagement = true);
+    try {
+      final result = await AdminService.getDataAnalysis();
+      if (mounted && result['success']) {
+        setState(() => _engagementData = result['data']['engagement']);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingEngagement = false);
+    }
+  }
+
+  Future<void> _loadFunnel() async {
+    setState(() => _isLoadingFunnel = true);
+    try {
+      final result = await AdminService.getDataAnalysis();
+      if (mounted && result['success']) {
+        setState(() => _funnelData = result['data']['funnel']);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingFunnel = false);
+    }
+  }
+
+  Future<void> _loadSentiment() async {
+    setState(() => _isLoadingSentiment = true);
+    try {
+      final result = await AdminService.getDataAnalysis();
+      if (mounted && result['success']) {
+        setState(() => _sentimentData = result['data']['sentiment']);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingSentiment = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,36 +133,34 @@ class _DataAnalysisScreenState extends State<DataAnalysisScreen> {
               const SizedBox(height: 20),
               // Analysis KPIs
               const SizedBox(height: 20),
-              // Analysis KPIs - Two cards sharing full width
-              _isLoadingPulse 
-                ? const Center(child: CircularProgressIndicator())
-                : Row(
-                    children: [
-                      Expanded(
-                        child: KPICard(
-                          title: 'Retención Semana 1',
-                          value: _pulseData?['retention'] ?? '0%',
-                          subtitle: '+5% vs mes anterior',
-                          icon: Icons.loop_rounded,
-                          color: Colors.teal,
-                          delay: 0,
-                          width: double.infinity,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: KPICard(
-                          title: 'Tiempo Medio',
-                          value: _pulseData?['avg_time'] ?? '0m',
-                          subtitle: 'Por sesión diaria',
-                          icon: Icons.timer_outlined,
-                          color: Colors.indigo,
-                          delay: 100,
-                          width: double.infinity,
-                        ),
-                      ),
-                    ],
+              // Analysis KPIs - Always visible, showing "..." when loading
+              Row(
+                children: [
+                  Expanded(
+                    child: KPICard(
+                      title: 'Retención Semana 1',
+                      value: _isLoadingPulse ? '...' : (_pulseData?['retention'] ?? '0%'),
+                      subtitle: _isLoadingPulse ? 'Cargando...' : '+5% vs mes anterior',
+                      icon: Icons.loop_rounded,
+                      color: Colors.teal,
+                      delay: 0,
+                      width: double.infinity,
+                    ),
                   ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: KPICard(
+                      title: 'Tiempo Medio',
+                      value: _isLoadingPulse ? '...' : (_pulseData?['avg_time'] ?? '0m'),
+                      subtitle: _isLoadingPulse ? 'Cargando...' : 'Por sesión diaria',
+                      icon: Icons.timer_outlined,
+                      color: Colors.indigo,
+                      delay: 100,
+                      width: double.infinity,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 32),
               
               _buildSectionHeader('Participación por Funciones', Icons.pie_chart_rounded, showRefresh: true, onRefresh: _loadEngagement),

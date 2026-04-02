@@ -4,6 +4,7 @@ import '../../../core/widgets/cycle_loading_button.dart';
 import 'widgets/flow_selector_widget.dart';
 import 'widgets/symptom_selector_widget.dart';
 import 'widgets/mood_selector_widget.dart';
+import '../../../core/widgets/custom_notification.dart';
 
 class AddSymptomsScreen extends StatefulWidget {
   const AddSymptomsScreen({super.key});
@@ -93,11 +94,16 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
     if (mounted) {
       setState(() => _isLoading = false);
       if (result['success']) {
-        Navigator.pop(context);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'])),
+        CustomNotification.show(
+          context, 
+          message: 'Síntomas guardados correctamente', 
+          type: NotificationType.success
         );
+        Future.delayed(const Duration(milliseconds: 1200), () {
+          if (mounted) Navigator.pop(context);
+        });
+      } else {
+        CustomNotification.show(context, message: result['message'], type: NotificationType.error);
       }
     }
   }
@@ -304,8 +310,11 @@ class _AddSymptomsScreenState extends State<AddSymptomsScreen> {
             isLoading: _isLoading,
             onPressed: _saveLog,
             backgroundColor: const Color(0xFFBDD4FF),
+            loadingColor: Colors.white,
             borderRadius: 30,
             height: 60,
+            showBorderAnimation: true,
+            useBorealisAnimation: false,
           ),
         ),
       ),

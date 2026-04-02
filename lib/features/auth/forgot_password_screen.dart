@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'otp_verification_screen.dart';
 import 'auth_service.dart';
 import '../../core/widgets/cycle_loading_button.dart';
+import '../../core/widgets/custom_notification.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -17,18 +18,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   void _handleRecoverPassword() async {
     final email = _emailController.text.trim();
     if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, ingresa tu email')),
-      );
+      CustomNotification.show(context, message: 'Por favor, ingresa tu email', type: NotificationType.warning);
       return;
     }
 
     // Email format validation
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegex.hasMatch(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, ingresa un formato de email válido')),
-      );
+      CustomNotification.show(context, message: 'Por favor, ingresa un formato de email válido', type: NotificationType.warning);
       return;
     }
 
@@ -39,9 +36,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     if (mounted) {
       setState(() => _isLoading = false);
       if (result['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Código enviado! Revisa tu correo.'), backgroundColor: Colors.green),
-        );
+        CustomNotification.show(context, message: 'Código enviado! Revisa tu correo.', type: NotificationType.success);
         Navigator.push(
           context, 
           MaterialPageRoute(builder: (_) => OtpVerificationScreen(email: email))
@@ -49,9 +44,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       } else if (result['statusCode'] == 429) {
         _showRateLimitDialog();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${result['message']}'), backgroundColor: Colors.red),
-        );
+        CustomNotification.show(context, message: 'Error: ${result['message']}', type: NotificationType.error);
       }
     }
   }
@@ -190,8 +183,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         isLoading: _isLoading,
                         onPressed: _handleRecoverPassword,
                         backgroundColor: const Color(0xFFFFCCE5),
-                        loadingColor: const Color(0xFFFF4081),
                         borderRadius: 30,
+                        showBorderAnimation: true,
+                        useBorealisAnimation: false,
                       ),
                     ],
                   ),

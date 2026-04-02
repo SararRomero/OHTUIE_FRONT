@@ -3,7 +3,12 @@ import 'core/theme/app_theme.dart';
 import 'features/splash/splash_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-void main() {
+import 'core/services/notification_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.init();
+  await NotificationService.requestPermissions();
   runApp(const MyApp());
 }
 

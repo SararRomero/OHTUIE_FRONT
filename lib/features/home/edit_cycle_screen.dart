@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:intl/intl.dart';
 import '../profile/user_service.dart';
+import 'home_service.dart'; // Agregado para llamar a HomeService.clearCache()
 import '../../core/widgets/cycle_loading_button.dart';
+import '../../core/widgets/custom_notification.dart';
 
 class EditCycleScreen extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -455,7 +456,6 @@ class _EditCycleScreenState extends State<EditCycleScreen> with SingleTickerProv
       height: 60,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
-        color: const Color(0xFFFF4081),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFFFF4081).withOpacity(0.3),
@@ -464,36 +464,35 @@ class _EditCycleScreenState extends State<EditCycleScreen> with SingleTickerProv
           ),
         ],
       ),
-          child: CycleLoadingButton(
-            text: "Guardar cambios",
-            isLoading: _isSaving,
-            onPressed: () async {
-              setState(() => _isSaving = true);
-              
-              final result = await UserService.updateUserMe(
-                cycleDuration: _cycleDuration,
-                periodDuration: _periodDuration,
-                lastPeriodDate: _lastPeriodDate.toIso8601String().split('T')[0],
-              );
-    
-              if (mounted) {
-                setState(() => _isSaving = false);
-                if (result['success']) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Configuración de ciclo actualizada")),
-                  );
-                  Navigator.pop(context, true);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(result['message'])),
-                  );
-                }
-              }
-            },
-            backgroundColor: const Color(0xFFFF4081),
-            borderRadius: 30,
-            height: 60,
-          ),
+      child: CycleLoadingButton(
+        text: "Guardar cambios",
+        isLoading: _isSaving,
+        backgroundColor: const Color(0xFFFF4081),
+        borderRadius: 30,
+        height: 60,
+        showBorderAnimation: true,
+        useBorealisAnimation: false,
+        onPressed: () async {
+          setState(() => _isSaving = true);
+          
+          final result = await UserService.updateUserMe(
+            cycleDuration: _cycleDuration,
+            periodDuration: _periodDuration,
+            lastPeriodDate: _lastPeriodDate.toIso8601String().split('T')[0],
+          );
+
+          if (mounted) {
+            setState(() => _isSaving = false);
+            if (result['success']) {
+              HomeService.clearCache();
+              CustomNotification.show(context, message: "Configuración de ciclo actualizada", type: NotificationType.success);
+              Navigator.pop(context, true);
+            } else {
+              CustomNotification.show(context, message: result['message'], type: NotificationType.error);
+            }
+          }
+        },
+      ),
     );
   }
 }

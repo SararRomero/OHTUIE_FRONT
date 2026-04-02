@@ -93,7 +93,7 @@ class _NotificationWidgetState extends State<_NotificationWidget> with SingleTic
         icon = Icons.warning_amber_rounded;
         break;
       case NotificationType.info:
-        bgColor = Colors.blue;
+        bgColor = const Color(0xFF455A64); // Solid Blue-Grey
         icon = Icons.info_outline;
         break;
     }
@@ -102,40 +102,46 @@ class _NotificationWidgetState extends State<_NotificationWidget> with SingleTic
       child: Align(
         alignment: Alignment.topCenter,
         child: Padding(
-          padding: const EdgeInsets.only(top: 10, left: 20, right: 20),
+          padding: const EdgeInsets.only(top: 10, left: 16, right: 16),
           child: SlideTransition(
             position: _offsetAnimation,
             child: Material(
               color: Colors.transparent,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(16),
+                  color: bgColor.withOpacity(0.95), // Highly opaque but slightly soft
+                  borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: bgColor.withOpacity(0.3),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
+                      color: Colors.black.withOpacity(0.15),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
                 child: Row(
                   children: [
-                    Icon(icon, color: Colors.white),
+                    Icon(icon, color: Colors.white, size: 24),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        widget.message,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text(
+                          widget.message,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            letterSpacing: 0.3,
+                          ),
                         ),
                       ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.white70, size: 20),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
                       onPressed: () {
                         _controller.reverse().then((_) => widget.onDismiss());
                       },

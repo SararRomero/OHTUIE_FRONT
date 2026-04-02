@@ -19,22 +19,21 @@ class _PredictionCardState extends State<PredictionCard> with TickerProviderStat
       if (dateStr == null) return "Pendiente";
       try {
         final date = DateTime.parse(dateStr);
-        final months = [
-          "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-          "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        final shortMonths = [
+          "Ene", "Feb", "Mar", "Abr", "May", "Jun",
+          "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"
         ];
 
         if (endDateStr != null) {
           final endDate = DateTime.parse(endDateStr);
           if (date.month == endDate.month) {
-            return "${date.day} - ${endDate.day} de ${months[date.month - 1]}";
+            return "${date.day} - ${endDate.day} ${shortMonths[date.month - 1]}";
           } else {
-             final shortMonths = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
              return "${date.day} ${shortMonths[date.month - 1]} - ${endDate.day} ${shortMonths[endDate.month - 1]}";
           }
         }
 
-        return "${date.day} de ${months[date.month - 1]}";
+        return "${date.day} ${shortMonths[date.month - 1]}";
       } catch (e) {
         return "Fecha inválida";
       }
@@ -157,10 +156,14 @@ class _PredictionCardState extends State<PredictionCard> with TickerProviderStat
         children: [
           Text(
             top,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.black),
           ),
           Text(
             bottom,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(color: Colors.black.withAlpha(120), fontSize: 11, fontWeight: FontWeight.w500),
           ),
         ],

@@ -50,14 +50,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               (route) => false,
             );
           } else {
-            // Otherwise go to Home (Calendar) and clear history
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (context) => const UserHomeScreen()),
               (route) => false,
             );
           }
         } else {
-          // Otherwise go to Sign Up/Landing and clear history
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const SignUpScreen()),
             (route) => false,
@@ -78,7 +76,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     return Scaffold(
       body: Stack(
         children: [
-          // Background Pattern
+          // Background Pattern (Static)
           Positioned.fill(
             child: Container(
               color: AppColors.primaryLight,
@@ -93,19 +91,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               opacity: _fadeAnimation,
               child: ScaleTransition(
                 scale: _scaleAnimation,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Using the asset image as requested
-                    Image.asset(
-                      'lib/assets/image/logo.png',
-                      width: 350,
-                      height: 350,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(Icons.spa, size: 100, color: Color(0xFFFF4081));
-                      },
-                    ),
-                  ],
+                child: Image.asset(
+                  'lib/assets/image/logo.png',
+                  width: 350,
+                  height: 350,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(Icons.spa, size: 100, color: Color(0xFFFF4081));
+                  },
                 ),
               ),
             ),
@@ -120,7 +112,7 @@ class BackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
-    // ... (Painting code same as before)
+    
     // Top Left - Light Blue
     paint.color = const Color(0xFFCCDDFF).withOpacity(0.5);
     canvas.drawRRect(
@@ -130,8 +122,8 @@ class BackgroundPainter extends CustomPainter {
       ),
       paint,
     );
-    // ... rest of the painting
-     // Top Right - Top
+    
+    // Top Right - Pink
     paint.color = const Color(0xFFFFE4EF);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
@@ -140,6 +132,7 @@ class BackgroundPainter extends CustomPainter {
       ),
       paint,
     );
+    
     // Middle Blue
     paint.color = const Color(0xFFCCDDFF);
     canvas.drawRRect(
@@ -149,6 +142,7 @@ class BackgroundPainter extends CustomPainter {
       ),
       paint,
     );
+    
     // Bottom Right Blue
     paint.color = const Color(0xFFCCDDFF);
     canvas.drawRRect(
@@ -158,7 +152,8 @@ class BackgroundPainter extends CustomPainter {
       ),
       paint,
     );
-     // Bottom Left Pink
+    
+    // Bottom Left Pink
     paint.color = const Color(0xFFFFE4EF);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
@@ -167,7 +162,8 @@ class BackgroundPainter extends CustomPainter {
       ),
       paint,
     );
-     // Bottom Center Blue
+    
+    // Bottom Center Blue
     paint.color = const Color(0xFFCCDDFF);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
@@ -177,6 +173,7 @@ class BackgroundPainter extends CustomPainter {
       paint,
     );
   }
+
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

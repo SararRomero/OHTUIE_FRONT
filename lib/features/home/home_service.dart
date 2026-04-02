@@ -5,6 +5,10 @@ import '../auth/auth_service.dart';
 class HomeService {
   static Map<String, dynamic>? _lastPrediction;
 
+  static void clearCache() {
+    _lastPrediction = null;
+  }
+
   static Future<Map<String, dynamic>> getCycles() async {
     try {
       final token = await AuthService.getToken();
@@ -82,6 +86,20 @@ class HomeService {
       } else {
         print("Error updating cycle. Status: ${response.statusCode}, Body: ${response.body}");
         return {"success": false, "message": "Error al actualizar el ciclo: ${response.statusCode}"};
+      }
+    } catch (e) {
+      return {"success": false, "message": "Error de conexión: $e"};
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteCycle(String id) async {
+    try {
+      final token = await AuthService.getToken();
+      final response = await ApiClient.deleteDirect("/cycles/$id", token: token);
+      if (response.statusCode == 200) {
+        return {"success": true, "message": "Ciclo eliminado correctamente"};
+      } else {
+        return {"success": false, "message": "Error al eliminar el ciclo: ${response.statusCode}"};
       }
     } catch (e) {
       return {"success": false, "message": "Error de conexión: $e"};

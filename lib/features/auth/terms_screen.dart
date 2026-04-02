@@ -55,7 +55,7 @@ class TermsScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    '11/02/2026',
+                                    '31/03/2026',
                                     style: TextStyle(
                                       fontSize: 16,
                                       color: Colors.grey[400],
@@ -83,12 +83,12 @@ class TermsScreen extends StatelessWidget {
                         _buildTermSection(
                           icon: Icons.help_outline,
                           title: 'Aceptación de los Términos',
-                          description: 'Si no está de acuerdo con alguno de los términos aquí establecidos, deberá abstenerse de utilizar la aplicación.',
+                          description: 'Esta aplicación está dirigida exclusivamente a la gestión del ciclo menstrual de la mujer. Si usted no pertenece a este grupo demográfico o no está de acuerdo con los términos, deberá abstenerse de utilizarla.',
                         ),
                         _buildTermSection(
                           icon: Icons.favorite_border,
                           title: 'Descripción del Servicio',
-                          description: 'La aplicación tiene fines informativos y de apoyo personal.',
+                          description: 'La aplicación tiene fines informativos y de apoyo personal para el seguimiento del ciclo.',
                         ),
                         _buildTermSection(
                           icon: Icons.list_alt,
@@ -98,7 +98,7 @@ class TermsScreen extends StatelessWidget {
                         _buildTermSection(
                           icon: Icons.edit_outlined,
                           title: 'Registro y Cuenta de Usuario',
-                          description: 'La usuaria podrá solicitar la eliminación de su cuenta en cualquier momento.',
+                          description: 'La usuaria podrá solicitar la eliminación de su cuenta en cualquier momento. La eliminación definitiva se procesará en un plazo de 30 días hábiles.',
                         ),
                         
                         const SizedBox(height: 40),

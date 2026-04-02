@@ -5,6 +5,7 @@ import '../widgets/dashboard/users_tab_view.dart';
 import 'admin_settings_screen.dart';
 import 'users_list_screen.dart';
 import '../../../../core/widgets/session_expired_modal.dart';
+import '../../../../core/widgets/custom_notification.dart';
 
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -157,13 +158,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         if (msg.contains('credentials') || msg.contains('unauthorized') || msg.contains('401') || msg.contains('authenticated') || msg.contains('token')) {
           _showSessionExpired();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content:
-                  Text('No se pudo conectar al servidor: ${result["message"]}'),
-              backgroundColor: Colors.orange[700],
-              duration: const Duration(seconds: 4),
-            ),
+          CustomNotification.show(
+            context, 
+            message: result["message"], 
+            type: NotificationType.warning
           );
         }
       }
@@ -264,36 +262,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             const LinearProgressIndicator(color: Colors.blue, backgroundColor: Colors.transparent, minHeight: 2)
           else
             Container(height: 2, color: Colors.transparent),
-          if (_serverDown)
-            Material(
-              color: Colors.orange[700],
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    const Icon(Icons.cloud_off, color: Colors.white, size: 18),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Servidor no disponible — mostrando datos en cero',
-                        style: TextStyle(color: Colors.white, fontSize: 13),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        _loadStats();
-                        _loadUsers();
-                      },
-                      child: const Text('Reintentar',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
           Expanded(
             child: TabBarView(
               controller: _tabController,

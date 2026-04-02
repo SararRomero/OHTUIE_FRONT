@@ -58,13 +58,16 @@ class CycleProgressIndicatorState extends State<CycleProgressIndicator> with Sin
     int periodDuration = widget.predictionData['period_duration'] ?? 5;
     
     DateTime lastPeriodStart = today;
-    if (widget.predictionData['next_period_start'] != null) {
+    if (widget.predictionData['last_period_start'] != null) {
+      lastPeriodStart = DateTime.parse(widget.predictionData['last_period_start']);
+    } else if (widget.predictionData['next_period_start'] != null) {
       DateTime nextPeriod = DateTime.parse(widget.predictionData['next_period_start']);
       lastPeriodStart = nextPeriod.subtract(Duration(days: avgCycle));
     }
 
     int currentCycleDay = today.difference(lastPeriodStart).inDays + 1;
-    if (currentCycleDay > avgCycle) currentCycleDay = (currentCycleDay % avgCycle);
+    // Removed modulo reset to allow tracking days of delay
+    // if (currentCycleDay > avgCycle) currentCycleDay = (currentCycleDay % avgCycle);
     if (currentCycleDay <= 0) currentCycleDay = 1;
 
     double progress = currentCycleDay / avgCycle;

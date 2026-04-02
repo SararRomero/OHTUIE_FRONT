@@ -175,8 +175,19 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
           child: Column(
             children: [
               _buildHeader(),
-              Expanded(
-                child: RefreshIndicator(
+              if (_isLoading)
+                const LinearProgressIndicator(
+                  color: Color(0xFFFF9EAF),
+                  backgroundColor: Colors.transparent,
+                  minHeight: 2,
+                )
+              else 
+                const SizedBox(height: 2),
+              if (_isLoading)
+                const Expanded(child: SizedBox())
+              else
+                Expanded(
+                  child: RefreshIndicator(
                   onRefresh: _loadStats,
                   color: const Color(0xFFFF85A1),
                   child: SingleChildScrollView(
@@ -466,7 +477,7 @@ class _EmotionsScreenState extends State<EmotionsScreen> with SingleTickerProvid
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            height: 180,
+            height: 200,
             child: _isLoading 
               ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF85A1)))
               : (_isWeekly ? _buildBarChart(dailyData) : _buildLineChart(dailyData)),

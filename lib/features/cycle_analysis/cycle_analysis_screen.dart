@@ -404,6 +404,8 @@ class _CycleAnalysisScreenState extends State<CycleAnalysisScreen> {
       backgroundColor: Colors.black,
       borderRadius: 20,
       height: 60,
+      showBorderAnimation: true,
+      useBorealisAnimation: false,
     );
   }
 }

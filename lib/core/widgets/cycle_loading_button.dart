@@ -78,6 +78,13 @@ class _CycleLoadingButtonState extends State<CycleLoadingButton> with SingleTick
     final buttonColor = widget.backgroundColor ?? const Color(0xFFFFCCE5);
     final isEnabled = widget.onPressed != null && !widget.isLoading;
 
+    // Default loadingColor to a darker version of the backgroundColor for contrast
+    final defaultLoadingColor = HSLColor.fromColor(buttonColor)
+        .withLightness((HSLColor.fromColor(buttonColor).lightness - 0.3).clamp(0.0, 1.0))
+        .toColor();
+    
+    final currentLoadingColor = widget.loadingColor ?? defaultLoadingColor;
+
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.center,
@@ -152,7 +159,7 @@ class _CycleLoadingButtonState extends State<CycleLoadingButton> with SingleTick
                   return CustomPaint(
                     painter: _BorderPainter(
                       progress: _controller.value,
-                      color: widget.loadingColor ?? Colors.white,
+                      color: currentLoadingColor,
                       borderRadius: widget.borderRadius,
                     ),
                   );

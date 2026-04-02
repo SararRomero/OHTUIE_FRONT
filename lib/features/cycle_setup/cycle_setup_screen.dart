@@ -8,6 +8,7 @@ import 'widgets/cycle_duration_page.dart';
 import 'widgets/last_period_page.dart';
 import 'widgets/period_duration_page.dart';
 import '../../core/widgets/cycle_loading_button.dart';
+import '../../core/widgets/custom_notification.dart';
 
 class CycleSetupScreen extends StatefulWidget {
   final String name;
@@ -114,12 +115,7 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> with TickerProvider
         }
       } else {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${result['message']}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        CustomNotification.show(context, message: 'Error: ${result['message']}', type: NotificationType.error);
       }
     }
   }
@@ -202,7 +198,6 @@ class _CycleSetupScreenState extends State<CycleSetupScreen> with TickerProvider
                         borderRadius: 35,
                         width: 70,
                         height: 70,
-                        loadingColor: Colors.white,
                         showBorderAnimation: true,
                         useBorealisAnimation: true,
                       ),

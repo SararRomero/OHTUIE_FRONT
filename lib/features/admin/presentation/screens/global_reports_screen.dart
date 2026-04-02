@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/admin_service.dart';
 import '../widgets/shared/kpi_card.dart';
 import '../widgets/shared/system_health_widget.dart';
+import '../../../../core/widgets/custom_notification.dart';
 
 class GlobalReportsScreen extends StatefulWidget {
   const GlobalReportsScreen({super.key});
@@ -100,42 +101,27 @@ class _GlobalReportsScreenState extends State<GlobalReportsScreen> {
   }
 
   Future<void> _handleExport() async {
-    // Show a loading snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Row(
-          children: [
-            CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-            SizedBox(width: 15),
-            Text('Generando archivo Excel...'),
-          ],
-        ),
-        duration: Duration(seconds: 2),
-      ),
+    // Show a loading notification
+    CustomNotification.show(
+      context, 
+      message: 'Generando archivo Excel...', 
+      type: NotificationType.info
     );
 
     final result = await AdminService.exportUsersToExcel();
 
     if (mounted) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       if (result['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message'] ?? 'Archivo generado exitosamente'),
-            backgroundColor: Colors.green,
-            action: SnackBarAction(
-              label: 'CERRAR',
-              textColor: Colors.white,
-              onPressed: () {},
-            ),
-          ),
+        CustomNotification.show(
+          context, 
+          message: result['message'] ?? 'Archivo generado exitosamente', 
+          type: NotificationType.success
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message'] ?? 'Error al exportar'),
-            backgroundColor: Colors.red,
-          ),
+        CustomNotification.show(
+          context, 
+          message: result['message'] ?? 'Error al exportar', 
+          type: NotificationType.error
         );
       }
     }

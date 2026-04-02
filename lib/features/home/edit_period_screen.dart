@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 import 'home_service.dart';
+import '../../core/widgets/custom_notification.dart';
+import '../../core/widgets/cycle_loading_button.dart';
 
 class EditPeriodScreen extends StatefulWidget {
   const EditPeriodScreen({super.key});
@@ -13,6 +16,7 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
   DateTime? _selectedEndDate;
   int _periodDuration = 5;
   bool _isLoading = true;
+  bool _isSaving = false;
   bool _selectingStartDate = true;
   final ScrollController _scrollController = ScrollController();
   List<dynamic> _savedCycles = [];
@@ -46,19 +50,21 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
   }
 
   void _scrollToCurrentMonth() {
-    Future.delayed(const Duration(milliseconds: 300), () {
+    Future.delayed(const Duration(milliseconds: 400), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
-          1250.0, 
-          duration: const Duration(milliseconds: 800),
-          curve: Curves.easeOutCubic,
+          _scrollController.position.maxScrollExtent, 
+          duration: const Duration(milliseconds: 1000),
+          curve: Curves.easeInOutCubic,
         );
       }
     });
   }
 
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadData({bool isRefresh = false}) async {
+    if (!isRefresh) {
+      setState(() => _isLoading = true);
+    }
     
     final results = await Future.wait([
       HomeService.getPredictions(),
@@ -78,7 +84,10 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
           _savedCycles = cyclesResult['data'];
           _checkActivePeriod();
         }
-        _isLoading = false;
+        if (!isRefresh) {
+          _isLoading = false;
+        }
+        _isSaving = false;
       });
     }
   }
@@ -200,10 +209,157 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 48),
+          if (_editingCycleId != null)
+            SizedBox(
+              width: 48,
+              child: IconButton(
+                icon: const Icon(Icons.delete_outline, color: Color(0xFFFF5252), size: 28),
+                onPressed: () => _confirmDelete(context),
+              ),
+            )
+          else
+            const SizedBox(width: 48),
         ],
       ),
     );
+  }
+
+  void _confirmDelete(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.transparent, // Background blur handled by modal
+      builder: (BuildContext ctx) {
+        return BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(20),
+                    blurRadius: 20,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF9EAF),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.delete_outline, color: Colors.white, size: 30),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Eliminar Registro',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    '¿Estás segura de que quieres eliminar este ciclo? Esta acción no se puede deshacer.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: const Text(
+                            'Cancelar',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.of(ctx).pop();
+                            _deleteSelectedCycle();
+                          },
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: const Color(0xFFFFE5E9), 
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: const Text(
+                            'Eliminar',
+                            style: TextStyle(
+                              color: Color(0xFFFF4081),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteSelectedCycle() async {
+    if (_editingCycleId == null) return;
+    
+    setState(() {
+      _isLoading = true;
+      _isSaving = false; // Don't show loading on Save button
+    });
+    
+    final result = await HomeService.deleteCycle(_editingCycleId!);
+    
+    if (mounted) {
+      if (result['success']) {
+        CustomNotification.show(context, message: 'Ciclo eliminado correctamente', type: NotificationType.success);
+        setState(() {
+          _editingCycleId = null;
+          _selectedStartDate = null;
+          _selectedEndDate = null;
+        });
+        _loadData(isRefresh: true);
+      } else {
+        setState(() => _isLoading = false);
+        CustomNotification.show(context, message: result['message'], type: NotificationType.error);
+      }
+    }
   }
 
 
@@ -306,7 +462,8 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
               _editingCycleId = null;
               for (var cycle in _savedCycles) {
                 final start = DateTime.parse(cycle['start_date']);
-                if (start.year == date.year && start.month == date.month) {
+                // Only edit if the EXACT same start date is selected
+                if (start.year == date.year && start.month == date.month && start.day == date.day) {
                   _editingCycleId = cycle['id'];
                   break;
                 }
@@ -412,19 +569,23 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
               ),
             ],
           ),
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : () async {
+          child: CycleLoadingButton(
+            text: 'Guardar Inicio de Periodo',
+            isLoading: _isSaving,
+            showBorderAnimation: true,
+            useBorealisAnimation: false,
+            loadingColor: Colors.white, // Standard white loading
+            backgroundColor: const Color(0xFFBDD4FF),
+            textColor: Colors.white,
+            borderRadius: 30,
+            height: 60,
+            onPressed: () async {
               if (_selectedStartDate == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Por favor, elige el día del inicio de su período'),
-                    backgroundColor: Color(0xFF9C27B0), // Purple for consistent branding
-                  ),
-                );
+                CustomNotification.show(context, message: 'Por favor, elige el día del inicio de su período', type: NotificationType.warning);
                 return;
               }
 
-              setState(() => _isLoading = true);
+              setState(() => _isSaving = true);
               
               Map<String, dynamic> result;
               if (_editingCycleId != null) {
@@ -435,30 +596,15 @@ class _EditPeriodScreenState extends State<EditPeriodScreen> {
 
               if (mounted) {
                 if (result['success']) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Registro guardado correctamente'),
-                      backgroundColor: Colors.green,
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
+                  CustomNotification.show(context, message: 'Registro guardado correctamente', type: NotificationType.success);
                   // Refresh data to update circles but stay on screen
-                  _loadData();
+                  _loadData(isRefresh: true);
                 } else {
-                  setState(() => _isLoading = false);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(result['message'])),
-                  );
+                  setState(() => _isSaving = false);
+                  CustomNotification.show(context, message: result['message'], type: NotificationType.error);
                 }
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFBDD4FF),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-            ),
-            child: const Text('Guardar Inicio de Periodo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ),
         ),
       ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../auth/auth_service.dart';
 import 'user_service.dart';
 import '../../core/widgets/cycle_loading_button.dart';
+import '../../core/widgets/custom_notification.dart';
+import '../auth/login_screen.dart';
 
 class DeleteAccountScreen extends StatefulWidget {
   const DeleteAccountScreen({super.key});
@@ -20,12 +22,23 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     if (mounted) {
       if (result['success']) {
         await AuthService.logout();
-        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+        if (context.mounted) {
+          CustomNotification.show(
+            context,
+            message: 'Eliminación procesada con éxito. Revisa tu correo.',
+            type: NotificationType.success,
+          );
+          await Future.delayed(const Duration(milliseconds: 1500));
+          if (context.mounted) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
+              (route) => false,
+            );
+          }
+        }
       } else {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${result['message']}'), backgroundColor: Colors.red),
-        );
+        CustomNotification.show(context, message: 'Error: ${result['message']}', type: NotificationType.error);
       }
     }
   }
@@ -63,9 +76,9 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
               ),
               const SizedBox(height: 16),
               const Text(
-                '¿Estás segura de que quieres eliminar tu cuenta? Esta acción no se puede deshacer y perderás todos tus datos.',
+                'Tu cuenta se desactivará y se enviará a la papelera. Se eliminará de forma permanente dentro de 30 días. Si cambias de opinión, solo vuelve a iniciar sesión antes de que se cumpla el plazo para cancelar la eliminación.',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   color: Colors.black87,
                   height: 1.5,
                 ),
@@ -78,6 +91,8 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                 onPressed: _handleDelete,
                 backgroundColor: Colors.red[400],
                 borderRadius: 16,
+                showBorderAnimation: true,
+                useBorealisAnimation: false,
               ),
               const SizedBox(height: 16),
               if (!_isLoading) 

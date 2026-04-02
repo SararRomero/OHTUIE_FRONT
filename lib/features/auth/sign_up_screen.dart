@@ -4,6 +4,7 @@ import '../cycle_setup/cycle_setup_screen.dart';
 import 'terms_screen.dart';
 import 'auth_service.dart';
 import '../../core/widgets/cycle_loading_button.dart';
+import '../../core/widgets/custom_notification.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -26,33 +27,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final password = _passwordController.text.trim();
 
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, completa todos los campos')),
-      );
+      CustomNotification.show(context, message: 'Por favor, completa todos los campos', type: NotificationType.warning);
       return;
     }
 
     // Email format validation
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegex.hasMatch(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, ingresa un formato de email válido')),
-      );
+      CustomNotification.show(context, message: 'Por favor, ingresa un formato de email válido', type: NotificationType.warning);
       return;
     }
 
     // Password length validation
     if (password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('La contraseña debe tener al menos 6 caracteres')),
-      );
+      CustomNotification.show(context, message: 'La contraseña debe tener al menos 6 caracteres', type: NotificationType.warning);
       return;
     }
 
     if (!_acceptedTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Debes aceptar los términos y condiciones')),
-      );
+      CustomNotification.show(context, message: 'Debes aceptar los términos y condiciones', type: NotificationType.warning);
       return;
     }
 
@@ -216,10 +209,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         isLoading: _isLoading,
                         onPressed: _handleSignUp,
                         backgroundColor: const Color(0xFFFFCCE5),
-                        loadingColor: const Color(0xFFFF4081),
                         borderRadius: 30,
                         showBorderAnimation: true,
-                        useBorealisAnimation: true,
+                        useBorealisAnimation: false,
                       ),
                       const SizedBox(height: 20),
                       

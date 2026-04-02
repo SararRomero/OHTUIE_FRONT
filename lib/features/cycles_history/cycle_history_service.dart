@@ -1,6 +1,8 @@
 import 'dart:convert';
 import '../auth/auth_service.dart';
 import '../../core/network/api_client.dart';
+import '../../core/utils/error_handler.dart';
+
 
 class CycleHistoryService {
   static Future<Map<String, dynamic>> getCycles({int skip = 0, int limit = 100}) async {
@@ -17,7 +19,7 @@ class CycleHistoryService {
         return {"success": false, "message": error['detail'] ?? "Failed to fetch cycles"};
       }
     } catch (e) {
-      return {"success": false, "message": "Connection error: $e"};
+      return {"success": false, "message": ErrorHandler.translate(e)};
     }
   }
 
@@ -35,7 +37,7 @@ class CycleHistoryService {
         return {"success": false, "message": error['detail'] ?? "Failed to fetch prediction"};
       }
     } catch (e) {
-      return {"success": false, "message": "Connection error: $e"};
+      return {"success": false, "message": ErrorHandler.translate(e)};
     }
   }
 
@@ -53,7 +55,7 @@ class CycleHistoryService {
         return {"success": false, "message": error['detail'] ?? "Failed to delete cycle"};
       }
     } catch (e) {
-      return {"success": false, "message": "Connection error: $e"};
+      return {"success": false, "message": ErrorHandler.translate(e)};
     }
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import './cycle_history_service.dart';
 import '../profile/user_service.dart';
+import '../../core/widgets/custom_notification.dart';
 
 // ============================================================================
 // WIDGETS DESACOPLADOS - COMPONENTES REUTILIZABLES
@@ -349,9 +350,7 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar datos: $e')),
-        );
+        CustomNotification.show(context, message: 'Error al cargar datos: $e', type: NotificationType.error);
       }
     }
   }
@@ -383,9 +382,7 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
         await _loadData();
       } else {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${resp['message']}')),
-        );
+        CustomNotification.show(context, message: 'Error: ${resp['message']}', type: NotificationType.error);
       }
     }
   }
@@ -417,9 +414,7 @@ class _CyclesHistoryScreenState extends State<CyclesHistoryScreen> {
         await _loadData();
       } else {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${resp['message']}')),
-        );
+        CustomNotification.show(context, message: 'Error: ${resp['message']}', type: NotificationType.error);
       }
     }
   }

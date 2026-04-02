@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/cycle_loading_button.dart';
+import '../../../../core/widgets/custom_notification.dart';
 import '../../data/admin_service.dart';
 
 class UsersListScreen extends StatefulWidget {
@@ -104,8 +105,10 @@ class _UsersListScreenState extends State<UsersListScreen> {
           _isLoading = false;
           _isFetchingMore = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'Error fetching users'), backgroundColor: Colors.red),
+        CustomNotification.show(
+          context, 
+          message: result['message'] ?? 'Error fetching users', 
+          type: NotificationType.error
         );
       }
     }
@@ -375,17 +378,25 @@ class _UsersListScreenState extends State<UsersListScreen> {
                       color: AppColors.primaryLight,
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 2),
+                      image: user['avatar_id'] != null 
+                          ? DecorationImage(
+                              image: AssetImage('lib/assets/image/avatars/${user['avatar_id']}.png'),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
                     ),
-                    child: Center(
-                      child: Text(
-                        (user['full_name'] ?? '?')[0].toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFFF4081),
-                        ),
-                      ),
-                    ),
+                    child: user['avatar_id'] == null 
+                      ? Center(
+                          child: Text(
+                            (user['full_name'] ?? '?')[0].toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFFF4081),
+                            ),
+                          ),
+                        )
+                      : null,
                   ),
                   const SizedBox(width: 16),
                   // Info
@@ -576,16 +587,11 @@ class _UsersListScreenState extends State<UsersListScreen> {
             text: 'Guardar',
             isLoading: isSaving,
             backgroundColor: const Color(0xFFFF4081),
-            loadingColor: const Color(0xFFFF4081),
-            width: 100,
-            height: 40,
-            fontSize: 14,
             borderRadius: 12,
             showBorderAnimation: true,
             useBorealisAnimation: false,
             onPressed: () async {
               setDialogState(() => isSaving = true);
-              final messenger = ScaffoldMessenger.of(context);
               final result = await AdminService.updateUser(user['id'], {
                 'full_name': nameController.text,
                 'email': emailController.text,
@@ -595,9 +601,9 @@ class _UsersListScreenState extends State<UsersListScreen> {
               Navigator.pop(context);
               if (result['success']) {
                 _loadUsers(refresh: true);
-                messenger.showSnackBar(const SnackBar(content: Text('Usuario actualizado'), backgroundColor: Colors.green));
+                CustomNotification.show(context, message: 'Usuario actualizado', type: NotificationType.success);
               } else {
-                messenger.showSnackBar(SnackBar(content: Text(result['message']), backgroundColor: Colors.red));
+                CustomNotification.show(context, message: result['message'], type: NotificationType.error);
               }
             },
           ),
@@ -651,21 +657,16 @@ class _UsersListScreenState extends State<UsersListScreen> {
             text: action,
             isLoading: isSaving,
             backgroundColor: actionColor,
-            loadingColor: actionColor,
-            width: 120,
-            height: 40,
-            fontSize: 14,
             borderRadius: 12,
             showBorderAnimation: true,
             useBorealisAnimation: false,
             onPressed: () async {
                setDialogState(() => isSaving = true);
-               final messenger = ScaffoldMessenger.of(context);
                final verify = await AdminService.verifyAdminPassword(passwordController.text);
                if (!verify['success']) {
                  if (mounted) {
                     setDialogState(() => isSaving = false);
-                    messenger.showSnackBar(SnackBar(content: Text(verify['message']), backgroundColor: Colors.red));
+                    CustomNotification.show(context, message: verify['message'], type: NotificationType.error);
                  }
                  return;
                }
@@ -676,9 +677,9 @@ class _UsersListScreenState extends State<UsersListScreen> {
               Navigator.pop(context);
               if (result['success']) {
                 _loadUsers(refresh: true);
-                messenger.showSnackBar(SnackBar(content: Text('Usuario ${isActive ? "bloqueado" : "desbloqueado"} correctamente'), backgroundColor: Colors.green));
+                CustomNotification.show(context, message: 'Usuario ${isActive ? "bloqueado" : "desbloqueado"} correctamente', type: NotificationType.success);
               } else {
-                messenger.showSnackBar(SnackBar(content: Text(result['message']), backgroundColor: Colors.red));
+                CustomNotification.show(context, message: result['message'], type: NotificationType.error);
               }
             },
           ),
@@ -728,21 +729,16 @@ class _UsersListScreenState extends State<UsersListScreen> {
             text: 'Eliminar',
             isLoading: isSaving,
             backgroundColor: Colors.red,
-            loadingColor: Colors.red,
-            width: 100,
-            height: 40,
-            fontSize: 14,
             borderRadius: 12,
             showBorderAnimation: true,
             useBorealisAnimation: false,
             onPressed: () async {
                setDialogState(() => isSaving = true);
-               final messenger = ScaffoldMessenger.of(context);
                final verify = await AdminService.verifyAdminPassword(passwordController.text);
                if (!verify['success']) {
                  if (mounted) {
                     setDialogState(() => isSaving = false);
-                    messenger.showSnackBar(SnackBar(content: Text(verify['message']), backgroundColor: Colors.red));
+                    CustomNotification.show(context, message: verify['message'], type: NotificationType.error);
                  }
                  return;
                }
@@ -753,9 +749,9 @@ class _UsersListScreenState extends State<UsersListScreen> {
               Navigator.pop(context);
               if (result['success']) {
                 _loadUsers(refresh: true);
-                messenger.showSnackBar(const SnackBar(content: Text('Usuario enviado a la papelera'), backgroundColor: Colors.green));
+                CustomNotification.show(context, message: 'Usuario enviado a la papelera', type: NotificationType.success);
               } else {
-                messenger.showSnackBar(SnackBar(content: Text(result['message']), backgroundColor: Colors.red));
+                CustomNotification.show(context, message: result['message'], type: NotificationType.error);
               }
             },
           ),

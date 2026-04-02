@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'auth_service.dart';
 import 'reset_password_screen.dart';
 import '../../core/widgets/cycle_loading_button.dart';
+import '../../core/widgets/custom_notification.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String email;
@@ -41,9 +42,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     final code = _controllers.map((c) => c.text).join();
 
     if (code.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, ingresa el código de 6 dígitos')),
-      );
+      CustomNotification.show(context, message: 'Por favor, ingresa el código de 6 dígitos', type: NotificationType.warning);
       return;
     }
 
@@ -176,7 +175,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       TextButton(
                         onPressed: _isLoading ? null : () {
                           AuthService.recoverPassword(widget.email);
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Código reenviado')));
+                          CustomNotification.show(context, message: 'Código reenviado', type: NotificationType.info);
                         },
                         child: const Text('Resend Code', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
                       ),
@@ -188,10 +187,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         isLoading: _isLoading,
                         onPressed: _handleVerifyCode,
                         backgroundColor: const Color(0xFFFFCCE5),
-                        loadingColor: const Color(0xFFFF4081),
                         borderRadius: 30,
                         showBorderAnimation: true,
-                        useBorealisAnimation: true,
+                        useBorealisAnimation: false,
                       ),
                     ],
                   ),

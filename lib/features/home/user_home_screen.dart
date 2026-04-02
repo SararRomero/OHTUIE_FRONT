@@ -7,6 +7,7 @@ import 'widgets/cycle_progress_indicator.dart';
 import 'widgets/home_action_buttons.dart';
 import 'widgets/prediction_card.dart';
 import '../../core/widgets/session_expired_modal.dart';
+import '../../core/services/notification_service.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -80,6 +81,17 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           _predictionData = result['data'];
           _isLoading = false;
         });
+
+        // Schedule notification if we have a next period start date
+        final nextPeriodStartStr = _predictionData?['next_period_start'];
+        if (nextPeriodStartStr != null) {
+          try {
+            final nextPeriodStart = DateTime.parse(nextPeriodStartStr);
+            NotificationService.schedulePeriodReminder(nextPeriodStart);
+          } catch (e) {
+            // Silently handle invalid Date format
+          }
+        }
       } else {
         setState(() => _isLoading = false);
         final message = result['message'].toString().toLowerCase();
@@ -156,7 +168,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                           initialDate: targetDate,
                         ),
                       ),
-                    );
+                    ).then((result) {
+                      if (result == true) {
+                        _loadAllData();
+                      }
+                    });
                   },
                 ),
                 const Spacer(flex: 2),

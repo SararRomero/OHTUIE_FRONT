@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'auth_service.dart';
 import 'login_screen.dart';
 import '../../core/widgets/cycle_loading_button.dart';
+import '../../core/widgets/custom_notification.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String email;
@@ -25,23 +26,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final confirmPassword = _confirmPasswordController.text.trim();
 
     if (password.isEmpty || confirmPassword.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, completa ambos campos')),
-      );
+      CustomNotification.show(context, message: 'Por favor, completa ambos campos', type: NotificationType.warning);
       return;
     }
 
     if (password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('La contraseña debe tener al menos 6 caracteres')),
-      );
+      CustomNotification.show(context, message: 'La contraseña debe tener al menos 6 caracteres', type: NotificationType.warning);
       return;
     }
 
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Las contraseñas no coinciden')),
-      );
+      CustomNotification.show(context, message: 'Las contraseñas no coinciden', type: NotificationType.warning);
       return;
     }
 
@@ -56,18 +51,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     if (mounted) {
       setState(() => _isLoading = false);
       if (result['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Contraseña cambiada con éxito!'), backgroundColor: Colors.green),
-        );
+        CustomNotification.show(context, message: 'Contraseña cambiada con éxito!', type: NotificationType.success);
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const LoginScreen()),
           (route) => false,
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${result['message']}'), backgroundColor: Colors.red),
-        );
+        CustomNotification.show(context, message: 'Error: ${result['message']}', type: NotificationType.error);
       }
     }
   }
@@ -204,8 +195,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         backgroundColor: const Color(0xFFFFCCE5),
                         loadingColor: const Color(0xFFFF4081),
                         borderRadius: 30,
-                        showBorderAnimation: false,
-                        useBorealisAnimation: true,
+                        showBorderAnimation: true,
+                        useBorealisAnimation: false,
                       ),
                     ],
                   ),

@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'dart:math';
 import 'home_service.dart';
 import 'symptoms/daily_log_service.dart';
-import 'widgets/prediction_card.dart';
 import 'utils/cycle_utils.dart';
 import 'symptoms/add_symptoms_screen.dart';
 import 'widgets/calendar_header.dart';
 import 'widgets/calendar_month_selector.dart';
 import 'widgets/calendar_day_item.dart';
 import 'widgets/daily_log_summary.dart';
-import 'widgets/ovulation_flower_painter.dart';
 import 'edit_cycle_screen.dart';
 
 
@@ -29,8 +26,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _selectedDay = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
   late Map<String, dynamic> _predictionData;
   Map<String, dynamic>? _selectedDayLog;
-  bool _isLoadingLog = false;
   bool _isLoadingPredictions = false;
+  bool _isLoadingLog = false; // Agregado para corregir error de variable no definida
+  bool _hasChanges = false;
 
   final Map<String, Map<String, String>> _moodOptions = {
     'normal': {'label': 'Normal', 'imagePath': 'lib/assets/image/animo_normal.png'},
@@ -59,7 +57,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   void initState() {
     super.initState();
-    _predictionData = widget.predictionData ?? {};
+    _predictionData = widget.predictionData ?? <String, dynamic>{};
 
     if (widget.initialDate != null) {
       _focusedDay = widget.initialDate!;
@@ -105,8 +103,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
     int avgCycle = _predictionData['avg_cycle_duration'] ?? 28;
     int periodDuration = _predictionData['period_duration'] ?? 5;
     
-    DateTime lastPeriodStart = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-    if (_predictionData['next_period_start'] != null) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    DateTime lastPeriodStart = today;
+    if (_predictionData['last_period_start'] != null) {
+      lastPeriodStart = DateTime.parse(_predictionData['last_period_start']);
+    } else if (_predictionData['next_period_start'] != null) {
       DateTime nextPeriod = DateTime.parse(_predictionData['next_period_start']);
       lastPeriodStart = nextPeriod.subtract(Duration(days: avgCycle));
     }
@@ -116,8 +119,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
     while (currentCycleDay <= 0) currentCycleDay += avgCycle;
 
     DateTime ovulationDate = DateTime.parse(_predictionData['ovulation_date'] ?? DateTime.now().toIso8601String());
-    DateTime fertileStart = DateTime.parse(_predictionData['fertile_window']?['start'] ?? DateTime.now().toIso8601String());
-    DateTime fertileEnd = DateTime.parse(_predictionData['fertile_window']?['end'] ?? DateTime.now().toIso8601String());
+    final fertileWindow = _predictionData['fertile_window'] as Map<String, dynamic>?;
+    DateTime fertileStart = DateTime.parse(fertileWindow?['start'] ?? DateTime.now().toIso8601String());
+    DateTime fertileEnd = DateTime.parse(fertileWindow?['end'] ?? DateTime.now().toIso8601String());
     
     int ovulationDay = ovulationDate.difference(lastPeriodStart).inDays + 1;
     while (ovulationDay > avgCycle) ovulationDay -= avgCycle;
@@ -144,14 +148,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoadingPredictions) {
-      return const Scaffold(
-        backgroundColor: Color(0xFFFFF8F9),
+      return Scaffold(
+        backgroundColor: const Color(0xFFFFF8F9),
         body: SafeArea(
           child: Column(
             children: [
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-                child: CalendarHeader(),
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+                child: CalendarHeader(popResult: _hasChanges),
               ),
               SizedBox(height: 10),
               LinearProgressIndicator(
@@ -171,15 +175,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
     DateTime todayDate = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
     final selectedDayPhase = _getDayPhaseInfo(todayDate);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F9),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-            child: Column(
-              children: [
-                const CalendarHeader(),
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop && _hasChanges) {
+          // Navigating back usually doesn't allow returning a result via system back,
+          // but we can try to push a replacement or simply trust the manual back button.
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFFF8F9),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+              child: Column(
+                children: [
+                  CalendarHeader(popResult: _hasChanges),
                 const SizedBox(height: 30),
                 _buildCalendarCard(),
                 const SizedBox(height: 35),
@@ -193,8 +205,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
                 const SizedBox(height: 30),
                 _buildAddSymptomsSection(),
-                const SizedBox(height: 20),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -365,9 +377,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
               );
               
-              if (result != null) {
-                // Here we would call HomeService.saveCycle(result['last_period'], etc.)
-                // For now, we simulate a reload:
+              if (result == true) {
+                _hasChanges = true;
+                HomeService.clearCache();
                 _loadPredictions();
               }
             },
