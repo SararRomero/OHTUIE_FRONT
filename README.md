@@ -87,7 +87,7 @@ Este proyecto ha sido diseñado e implementado con los más altos estándares de
 
 2. **Clonar el repositorio**:
    ```bash
-   git clone https://github.com/tu-usuario/OHTUIE_FRONT.git
+   git clone (https://github.com/SararRomero/OHTUIE_FRONT.git)
    ```
 
 3. **Instalar dependencias**:
